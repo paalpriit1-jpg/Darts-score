@@ -45,7 +45,12 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 .finish:active{background:#a8792b}
 .statsline{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #34495a;font-size:13px}
 .hidden{display:none!important}.badge{font-size:11px;color:var(--muted);text-align:center;margin:6px 0 12px}
-.historyitem{padding:12px 0;border-bottom:1px solid #34495a}
+.historyitem{padding:14px 0;border-bottom:1px solid #34495a}
+.history-avg-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.history-avg-player{background:#142330;border:1px solid #405466;border-radius:11px;padding:10px;min-width:0;text-align:center}
+.history-avg-name{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#dce7ef}
+.history-avg-label{font-size:10px;color:var(--muted);letter-spacing:.7px;margin-top:5px}
+.history-avg-value{font-size:25px;line-height:1.2;font-weight:900;color:#fff;margin-top:2px;font-variant-numeric:tabular-nums}
 .toast{background:#2d4a3d;border-radius:10px;padding:10px;text-align:center;margin:8px 0;font-size:13px}
 footer{color:#7890a3;font-size:10px;text-align:center;margin:20px 0}
 @media(min-width:500px){.app{padding-top:28px}.score{font-size:52px}}
@@ -369,9 +374,9 @@ body.playing footer{display:none!important}
 <div class="keypad" id="keypad"></div>
 
 <div class="finishrow">
-<button class="finish" data-finish="1">HOIA<br>1 NOOL</button>
-<button class="finish" data-finish="2">HOIA<br>2 NOOLT</button>
-<button class="finish" data-finish="3">HOIA<br>3 NOOLT</button>
+<button class="finish" data-finish="1">1 NOOL</button>
+<button class="finish" data-finish="2">2 NOOLT</button>
+<button class="finish" data-finish="3">3 NOOLT</button>
 </div>
 </div>
 
@@ -518,7 +523,7 @@ $('quitBtn').onclick=()=>{if(confirm('Katkestan käimasoleva mängu? Seda mängu
 $('nextGameBtn').onclick=nextGame;
 $('endSeriesBtn').onclick=finishSeries;
 $('newSeriesBtn').onclick=()=>show('setup');
-$('viewHistory').onclick=()=>{ $('historyList').innerHTML=persistent.length?persistent.map(h=>`<div class="historyitem"><b>${esc(h.names[h.winner])}</b> võitis · ${esc(h.names[0])} ${h.legs[0]}:${h.legs[1]} ${esc(h.names[1])}<br><span class="muted small">${new Date(h.date).toLocaleString('et-EE')} · AVG ${avg(h.stats[0])} / ${avg(h.stats[1])}</span></div>`).join(''):'Ajaloos pole veel mänge.';show('historyScreen');};
+$('viewHistory').onclick=()=>{ $('historyList').innerHTML=persistent.length?persistent.map(h=>`<div class="historyitem"><b>${esc(h.names[h.winner])}</b> võitis · ${esc(h.names[0])} ${h.legs[0]}:${h.legs[1]} ${esc(h.names[1])}<div class="muted small" style="margin-top:5px">${new Date(h.date).toLocaleString('et-EE')}</div><div class="history-avg-grid"><div class="history-avg-player"><div class="history-avg-name">${esc(h.names[0])}</div><div class="history-avg-label">MÄNGU AVG</div><div class="history-avg-value">${avg(h.stats[0])}</div></div><div class="history-avg-player"><div class="history-avg-name">${esc(h.names[1])}</div><div class="history-avg-label">MÄNGU AVG</div><div class="history-avg-value">${avg(h.stats[1])}</div></div></div></div>`).join(''):'Ajaloos pole veel mänge.';show('historyScreen');};
 $('backSetup').onclick=()=>show('setup');
 keypad();
 $('historyPreview').textContent=persistent.length?`${persistent.length} salvestatud mängu.`:'Mänge pole veel salvestatud.';
