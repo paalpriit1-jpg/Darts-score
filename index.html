@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="et">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#101923">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Darts Score">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Darts Score</title>
+<style>
+:root{--bg:#101923;--panel:#203344;--panel2:#293f51;--muted:#a7b8c7;--white:#f7fafc;--green:#16834a;--green2:#20a663;--red:#a33a36;--line:#405466}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+button,input,select{font:inherit}button{border:0;cursor:pointer;color:var(--white);touch-action:manipulation}
+.app{max-width:560px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.logo{font-size:22px;font-weight:900;letter-spacing:1.5px}.tag{font-size:10px;color:var(--muted);letter-spacing:1.5px}
+h1{font-size:24px;margin:12px 0 18px}h2{font-size:17px;margin:0 0 12px}
+.panel{background:var(--panel);border:1px solid #31485a;border-radius:16px;padding:15px;margin:12px 0}
+label{display:block;color:var(--muted);font-size:12px;margin:12px 0 7px}
+input,select{width:100%;background:#142330;color:var(--white);border:1px solid var(--line);border-radius:10px;padding:13px;font-size:16px;outline:none}
+.row{display:flex;gap:9px}.row>*{flex:1;min-width:0}
+.choice{background:var(--panel2);padding:12px 8px;border-radius:10px;font-weight:700}
+.choice.active{background:var(--green);box-shadow:0 0 0 2px #42c783 inset}
+.primary{background:var(--green);padding:16px;border-radius:12px;font-weight:800;width:100%;margin-top:15px}
+.secondary{background:var(--panel2);padding:12px;border-radius:10px;font-weight:700}
+.danger{background:var(--red)}
+.players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.player{background:var(--panel);border:1px solid #31485a;border-radius:15px;padding:13px;text-align:center;min-width:0}
+.player.active{border:2px solid var(--green2);padding:12px}
+.playername{font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.score{font-size:43px;font-weight:900;line-height:1.2;margin:8px 0}
+.meta{font-size:11px;color:var(--muted);line-height:1.8}
+.turnpill{display:inline-block;background:#315344;color:#c5ffdf;padding:5px 9px;border-radius:99px;font-size:10px;font-weight:800;margin-top:5px}
+.last-visits{display:flex;justify-content:center;gap:4px;flex-wrap:nowrap;margin-top:5px}.last-visits span{background:#142330;border:1px solid #405466;border-radius:5px;padding:3px 4px;min-width:25px;font-size:10px;font-weight:800;color:#e8f0f6}.last-visits .bust{color:#ff9b91;border-color:#8d4944}
+.center{text-align:center}.muted{color:var(--muted)}.small{font-size:12px}
+.entry{font-size:42px;font-weight:900;text-align:center;padding:8px}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.key{background:var(--panel2);border-radius:11px;padding:16px 8px;font-size:22px;font-weight:800;min-height:57px}
+.key.ok{background:var(--green)}.key.del{background:#76504a}
+.finishrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.finish{background:#7c5a23;padding:14px 5px;border-radius:11px;font-weight:800;min-height:60px;user-select:none;-webkit-user-select:none}
+.finish:active{background:#a8792b}
+.statsline{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #34495a;font-size:13px}
+.hidden{display:none!important}.badge{font-size:11px;color:var(--muted);text-align:center;margin:6px 0 12px}
+.historyitem{padding:12px 0;border-bottom:1px solid #34495a}
+.toast{background:#2d4a3d;border-radius:10px;padding:10px;text-align:center;margin:8px 0;font-size:13px}
+footer{color:#7890a3;font-size:10px;text-align:center;margin:20px 0}
+@media(min-width:500px){.app{padding-top:28px}.score{font-size:52px}}
+
+/* Kompaktne mänguvaade: kogu juhtimine ühel iPhone'i ekraanil */
+body.playing .app{padding:calc(5px + env(safe-area-inset-top)) 10px calc(5px + env(safe-area-inset-bottom))}
+body.playing header{margin-bottom:5px}
+body.playing .logo{font-size:18px}
+body.playing #game .panel{padding:8px;margin:6px 0}
+body.playing #game .players{gap:7px;margin-top:7px!important}
+body.playing #game .player{padding:7px}
+body.playing #game .player.active{padding:6px}
+body.playing #game .playername{font-size:12px}
+body.playing #game .score{font-size:34px;margin:3px 0}
+body.playing #game .meta{font-size:10px;line-height:1.45}
+body.playing #game .turnpill{padding:3px 7px;margin-top:3px}
+body.playing #game .entry{font-size:31px;padding:1px}
+body.playing #game .keypad{gap:5px;margin-top:5px}
+body.playing #game .key,body.playing #game .okKey{min-height:39px;padding:7px;font-size:18px}
+body.playing #game .finishrow{gap:5px;margin-top:6px}
+body.playing #game .finish{min-height:43px;padding:6px 3px;font-size:11px}
+body.playing #game .badge{margin:3px 0 5px;font-size:9px}
+body.playing #game .row{gap:6px;margin:5px 0}
+body.playing #game .secondary{padding:9px;font-size:13px}
+body.playing #game .panel h2{font-size:14px;margin-bottom:5px}
+body.playing #game .statsline{padding:3px 0;font-size:11px}
+body.playing footer{display:none}
+@media(max-height:740px){
+ body.playing .app{padding-top:calc(2px + env(safe-area-inset-top))}
+ body.playing #game .player .meta{font-size:9px;line-height:1.3}
+ body.playing #game .score{font-size:30px}
+ body.playing #game .key,body.playing #game .okKey{min-height:34px;padding:5px}
+ body.playing #game .finish{min-height:38px}
+ body.playing #game .panel{margin:4px 0;padding:6px}
+}
+
+body.playing #game .game-controls{position:sticky;top:calc(env(safe-area-inset-top) + 2px);z-index:20;background:var(--bg);padding:5px 0;margin:3px 0 6px;border-radius:10px} body.playing #game .game-controls .secondary{flex:1;min-height:40px;font-weight:800}
+/* v5 compact phone layout */
+body.playing header{display:flex;align-items:center;justify-content:space-between;margin:0 0 3px;padding:0 2px} body.playing .logo{font-size:15px;line-height:1.1} body.playing header .tag{font-size:8px}
+body.playing #game .game-controls{position:sticky;top:0;z-index:50;margin:0 0 3px;padding:3px 0;background:var(--bg)}
+body.playing #game .game-controls .secondary{min-height:34px;padding:5px 8px;font-size:12px}
+body.playing #game .panel{padding:5px;margin:3px 0}
+body.playing #game .players{gap:5px;margin-top:4px!important}
+body.playing #game .player{padding:5px}
+body.playing #game .player.active{padding:4px}
+body.playing #game .score{font-size:28px;margin:1px 0}
+body.playing #game .meta{font-size:9px;line-height:1.2}
+body.playing #game .entry{font-size:24px;padding:0}
+body.playing #game .keypad{gap:3px;margin-top:3px}
+body.playing #game .key,body.playing #game .okKey{min-height:32px;padding:4px;font-size:16px}
+body.playing #game .finishrow{margin-top:3px;gap:3px}
+body.playing #game .finish{min-height:33px;padding:3px;font-size:10px}
+body.playing #game .panel h2{font-size:12px;margin-bottom:2px}
+body.playing #game .statsline{padding:2px 0;font-size:10px}
+body.playing #game .badge{margin:2px 0;font-size:9px}
+body.playing #game .row{margin:3px 0}
+
+/* Kogu mänguvaade: pealkirjast TAGASI/KATKESTA nuppudeni ühe ekraani kõrgusel */
+body.playing .app{padding:calc(3px + env(safe-area-inset-top)) 8px calc(3px + env(safe-area-inset-bottom));}
+body.playing header{display:flex!important;min-height:22px;margin:0 0 2px!important}
+body.playing #game .game-controls{position:static!important;margin:0 0 2px!important;padding:0!important;gap:5px}
+body.playing #game .game-controls .secondary{min-height:29px!important;padding:3px 6px!important;font-size:11px!important}
+body.playing #game>.row:not(.game-controls){margin:2px 0!important;font-size:11px}
+body.playing #game .players{margin:3px 0!important;gap:4px!important}
+body.playing #game .player{padding:4px!important}
+body.playing #game .playername{font-size:10px!important}
+body.playing #game .score{font-size:25px!important;line-height:1.05;margin:1px 0!important}
+body.playing #game .meta{font-size:8px!important;line-height:1.15!important}
+body.playing #game .turnpill{font-size:8px;padding:2px 5px;margin-top:1px}
+body.playing #game .panel{padding:4px!important;margin:2px 0!important}
+body.playing #game .panel h2{font-size:10px!important;margin:0 0 2px!important}
+body.playing #game .entry{font-size:20px!important;line-height:1.05;padding:0!important}
+body.playing #game .small{font-size:9px!important}
+body.playing #game .keypad{gap:2px!important;margin-top:2px!important}
+body.playing #game .key,body.playing #game .okKey{min-height:27px!important;padding:2px!important;font-size:14px!important}
+body.playing #game .badge{font-size:8px!important;margin:1px 0!important;line-height:1.1}
+body.playing #game .finishrow{gap:2px!important;margin-top:2px!important}
+body.playing #game .finish{min-height:27px!important;padding:2px!important;font-size:8px!important;line-height:1.05}
+body.playing #game .statsline{padding:1px 0!important;font-size:9px!important}
+body.playing footer{display:none!important}
+@media(max-height:800px){
+ body.playing .app{padding-top:calc(1px + env(safe-area-inset-top))}
+ body.playing #game .player .meta{font-size:7px!important}
+ body.playing #game .score{font-size:22px!important}
+ body.playing #game .key,body.playing #game .okKey{min-height:24px!important}
+ body.playing #game .finish{min-height:24px!important}
+}
+
+body.playing{overflow:hidden}
+body.playing .app{width:100%;max-width:520px;margin:0 auto;transform-origin:top center}
+body.playing #game{padding-bottom:2px}
+body.playing #game .game-controls{display:flex!important;gap:6px;margin:3px 0!important}
+body.playing #game .game-controls button{flex:1;min-height:30px;padding:4px;font-size:11px}
+
+
+/* iPhone: fit the complete game between the title and bottom controls */
+@media (max-width:600px){
+ body.playing{overflow:hidden!important}
+ body.playing .app{box-sizing:border-box;width:100%!important;max-width:none!important;margin:0!important;padding:calc(2px + env(safe-area-inset-top)) 7px calc(2px + env(safe-area-inset-bottom))!important}
+ body.playing header{display:flex!important;min-height:26px!important;margin:0 0 2px!important;padding:0!important}
+ body.playing .logo{font-size:18px!important;line-height:1!important}
+ body.playing header .tag{font-size:7px!important}
+ body.playing #game{display:flex!important;flex-direction:column!important;gap:2px!important}
+ body.playing #game>.row{margin:1px 0!important;font-size:10px!important}
+ body.playing #game .tag{font-size:8px!important;letter-spacing:1px!important}
+ body.playing #game .players{display:grid!important;grid-template-columns:1fr 1fr!important;gap:4px!important;margin:2px 0!important}
+ body.playing #game .player{padding:4px!important;border-radius:10px!important}
+ body.playing #game .playername{font-size:10px!important}
+ body.playing #game .score{font-size:24px!important;line-height:1!important;margin:1px 0!important}
+ body.playing #game .meta{font-size:7px!important;line-height:1.1!important}
+ body.playing #game .turnpill{font-size:7px!important;padding:1px 4px!important;margin-top:1px!important}
+ body.playing #game .panel{padding:4px!important;margin:2px 0!important}
+ body.playing #game .panel h2{font-size:10px!important;margin:0 0 1px!important}
+ body.playing #game .entry{font-size:19px!important;line-height:1!important;padding:0!important}
+ body.playing #game .small{font-size:8px!important}
+ body.playing #game .keypad{gap:2px!important;margin-top:2px!important}
+ body.playing #game .key,body.playing #game .okKey{min-height:26px!important;height:26px!important;padding:1px!important;font-size:14px!important;border-radius:7px!important}
+ body.playing #game .badge{font-size:7px!important;line-height:1!important;margin:1px 0!important;padding:2px!important}
+ body.playing #game .finishrow{gap:2px!important;margin-top:2px!important}
+ body.playing #game .finish{min-height:24px!important;height:24px!important;padding:2px!important;font-size:7px!important;line-height:1!important}
+ body.playing #game .statsline{padding:0!important;font-size:7px!important;line-height:1.1!important}
+ body.playing #game .game-controls{position:static!important;display:flex!important;flex:0 0 auto!important;gap:5px!important;margin:2px 0 0!important;padding:0!important}
+ body.playing #game .game-controls button{flex:1!important;min-height:29px!important;height:29px!important;padding:3px!important;font-size:10px!important}
+ body.playing footer{display:none!important}
+}
+@media(max-height:780px) and (max-width:600px){
+ body.playing .app{padding-top:1px!important}
+ body.playing header{min-height:22px!important}
+ body.playing #game .player{padding:3px!important}
+ body.playing #game .score{font-size:21px!important}
+ body.playing #game .meta{font-size:6.5px!important}
+ body.playing #game .key,body.playing #game .okKey{height:23px!important;min-height:23px!important}
+ body.playing #game .finish{height:21px!important;min-height:21px!important}
+ body.playing #game .game-controls button{height:26px!important;min-height:26px!important}
+}
+
+/* Final iPhone fit: scale the entire game view, preserving bottom controls */
+body.playing{overflow:hidden!important}
+body.playing .app{transform:none!important;transform-origin:top left!important;max-width:none!important;margin:0!important;padding:calc(2px + env(safe-area-inset-top)) 7px 2px!important;box-sizing:border-box}
+body.playing header{display:flex!important;margin:0 0 3px!important;padding:0!important;min-height:24px!important}
+body.playing .logo{font-size:17px!important;line-height:1!important}
+body.playing header .tag{font-size:7px!important}
+body.playing #game .game-controls{display:flex!important;position:static!important;gap:5px!important;margin:3px 0 0!important;padding:0!important}
+body.playing #game .game-controls button{flex:1!important;min-height:28px!important;padding:3px!important;font-size:10px!important}
+body.playing #game>.row{margin:2px 0!important;font-size:10px!important}
+body.playing #game .players{gap:4px!important;margin:3px 0!important}
+body.playing #game .player{padding:4px!important}
+body.playing #game .playername{font-size:10px!important}
+body.playing #game .score{font-size:23px!important;line-height:1!important;margin:1px 0!important}
+body.playing #game .meta{font-size:7px!important;line-height:1.1!important}
+body.playing #game .turnpill{font-size:7px!important;padding:1px 4px!important;margin-top:1px!important}
+body.playing #game .panel{padding:4px!important;margin:2px 0!important}
+body.playing #game .panel h2{font-size:9px!important;margin:0 0 1px!important}
+body.playing #game .entry{font-size:18px!important;line-height:1!important;padding:0!important}
+body.playing #game .small{font-size:8px!important}
+body.playing #game .keypad{gap:2px!important;margin-top:2px!important}
+body.playing #game .key,body.playing #game .okKey{min-height:24px!important;height:24px!important;padding:1px!important;font-size:13px!important;border-radius:6px!important}
+body.playing #game .badge{font-size:7px!important;line-height:1!important;margin:1px 0!important;padding:1px 3px!important}
+body.playing #game .finishrow{gap:2px!important;margin-top:2px!important}
+body.playing #game .finish{min-height:21px!important;height:21px!important;padding:1px!important;font-size:7px!important;line-height:1!important}
+body.playing #game .statsline{padding:0!important;font-size:7px!important;line-height:1.05!important}
+body.playing footer{display:none!important}
+
+/* v14: readable iPhone layout without whole-page zoom */
+body.playing{overflow-x:hidden!important;overflow-y:auto!important}
+body.playing .app{zoom:1!important;width:100%!important;max-width:520px!important;margin:0 auto!important;padding:calc(5px + env(safe-area-inset-top)) 10px calc(5px + env(safe-area-inset-bottom))!important;box-sizing:border-box}
+body.playing header{display:flex!important;min-height:42px!important;margin:0 0 7px!important;padding:0!important}
+body.playing .logo{font-size:22px!important;line-height:1.1!important}
+body.playing header .tag{font-size:9px!important}
+body.playing #game>.row{margin:5px 0!important;font-size:13px!important}
+body.playing #game .tag{font-size:10px!important;letter-spacing:1.2px!important}
+body.playing #game .players{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;margin:7px 0!important}
+body.playing #game .player{padding:8px!important;border-radius:12px!important}
+body.playing #game .playername{font-size:13px!important}
+body.playing #game .score{font-size:31px!important;line-height:1.05!important;margin:3px 0!important}
+body.playing #game .meta{font-size:9px!important;line-height:1.25!important}
+body.playing #game .turnpill{font-size:9px!important;padding:3px 6px!important;margin-top:3px!important}
+body.playing #game .panel{padding:7px!important;margin:5px 0!important}
+body.playing #game .panel h2{font-size:12px!important;margin:0 0 3px!important}
+body.playing #game .entry{font-size:23px!important;line-height:1.05!important;padding:1px!important}
+body.playing #game .small{font-size:10px!important}
+body.playing #game .keypad{gap:4px!important;margin-top:5px!important}
+body.playing #game .key,body.playing #game .okKey{min-height:40px!important;height:40px!important;padding:4px!important;font-size:19px!important;border-radius:8px!important}
+body.playing #game .badge{font-size:9px!important;line-height:1.1!important;margin:3px 0!important;padding:2px 4px!important}
+body.playing #game .finishrow{gap:4px!important;margin-top:4px!important}
+body.playing #game .finish{min-height:34px!important;height:34px!important;padding:3px!important;font-size:9px!important;line-height:1.05!important}
+body.playing #game .statsline{padding:2px 0!important;font-size:10px!important;line-height:1.15!important}
+body.playing #game .game-controls{display:flex!important;position:static!important;gap:6px!important;margin:6px 0 0!important;padding:0!important}
+body.playing #game .game-controls button{flex:1!important;min-height:40px!important;padding:5px!important;font-size:12px!important}
+body.playing footer{display:none!important}
+@media(max-height:760px) and (max-width:600px){
+ body.playing .app{padding-top:2px!important}
+ body.playing #game .player{padding:6px!important}
+ body.playing #game .score{font-size:27px!important}
+ body.playing #game .key,body.playing #game .okKey{height:34px!important;min-height:34px!important}
+ body.playing #game .finish{height:29px!important;min-height:29px!important}
+}
+
+/* v15: use the available lower screen space for larger, easier-to-hit controls */
+@media(max-width:600px){
+ body.playing .app{padding-bottom:calc(12px + env(safe-area-inset-bottom))!important}
+ body.playing #game>.row{margin:8px 0!important;font-size:14px!important}
+ body.playing #game .players{gap:9px!important;margin:10px 0 12px!important}
+ body.playing #game .player{padding:12px 8px!important;min-height:190px}
+ body.playing #game .playername{font-size:16px!important}
+ body.playing #game .score{font-size:40px!important;margin:5px 0!important}
+ body.playing #game .meta{font-size:11px!important;line-height:1.35!important}
+ body.playing #game .turnpill{font-size:11px!important;padding:4px 8px!important;margin-top:5px!important}
+ body.playing #game .panel{padding:11px!important;margin:8px 0!important}
+ body.playing #game .small{font-size:13px!important}
+ body.playing #game .keypad{gap:6px!important;margin-top:8px!important}
+ body.playing #game .key,body.playing #game .okKey{min-height:54px!important;height:54px!important;padding:5px!important;font-size:25px!important;border-radius:10px!important}
+ body.playing #game .badge{font-size:11px!important;margin:6px 0!important;padding:3px!important}
+ body.playing #game .finishrow{gap:6px!important;margin-top:7px!important}
+ body.playing #game .finish{min-height:45px!important;height:45px!important;padding:5px!important;font-size:11px!important}
+ body.playing #game .statsline{padding:4px 0!important;font-size:13px!important}
+ body.playing #game .panel h2{font-size:15px!important;margin:0 0 5px!important}
+ body.playing #game .game-controls{gap:8px!important;margin:10px 0 0!important}
+ body.playing #game .game-controls button{min-height:48px!important;font-size:14px!important}
+}
+
+@media(max-width:600px){
+ body.playing #game .entry{display:block!important;min-height:38px;font-size:32px!important;line-height:1.1!important;font-weight:800!important;margin:2px 0 5px!important}
+}
+
+/* v18: larger, clearer text inside both player cards */
+@media(max-width:600px){
+ body.playing #game .playername{font-size:18px!important;line-height:1.2!important}
+ body.playing #game .player .score{font-size:43px!important;line-height:1.05!important}
+ body.playing #game .player .meta{font-size:12px!important;line-height:1.4!important}
+ body.playing #game .player .turnpill{font-size:12px!important;padding:4px 9px!important}
+}
+
+/* v19: substantially larger player names, scores and supporting stats */
+@media(max-width:600px){
+ body.playing #game .player{padding:14px 10px!important;min-height:205px!important}
+ body.playing #game .playername{font-size:22px!important;line-height:1.2!important;font-weight:800!important}
+ body.playing #game .player .score{font-size:52px!important;line-height:1.05!important;font-weight:900!important;margin:6px 0!important}
+ body.playing #game .player .meta{font-size:14px!important;line-height:1.45!important}
+ body.playing #game .player .turnpill{font-size:14px!important;padding:5px 10px!important}
+}
+
+/* v21: make player-card statistics clearly readable */
+@media(max-width:600px){
+ body.playing #game .playername{font-size:24px!important;line-height:1.2!important}
+ body.playing #game .player .score{font-size:56px!important;line-height:1.05!important}
+ body.playing #game .player .meta{font-size:16px!important;line-height:1.5!important}
+ body.playing #game .player .meta b{font-size:16px!important;font-weight:900!important}
+ body.playing #game .player .turnpill{font-size:15px!important;padding:5px 11px!important}
+}
+
+/* v22 test: make only the player-card statistics 1.5x larger */
+@media(max-width:600px){
+ body.playing #game .players .player .meta,
+ body.playing #game .players .player .meta b{
+   font-size:24px!important;
+   line-height:1.35!important;
+ }
+}
+
+/* v23: correct selector for the player cards (players is an ID) */
+@media(max-width:600px){
+ body.playing #game #players .player .meta,
+ body.playing #game #players .player .meta b{
+   font-size:18px!important;
+   line-height:1.4!important;
+ }
+}
+
+/* v28: compact player cards; preserve the large score */
+@media(max-width:600px){
+ body.playing #game #players{gap:7px!important}
+ body.playing #game #players .player{padding:9px 6px!important;min-height:0!important}
+ body.playing #game #players .playername{font-size:19px!important;line-height:1.15!important;margin-bottom:2px!important}
+ body.playing #game #players .player .score{font-size:56px!important;line-height:1!important;margin:2px 0 5px!important}
+ body.playing #game #players .player .meta,
+ body.playing #game #players .player .meta b{font-size:14px!important;line-height:1.3!important}
+ body.playing #game #players .player .turnpill{font-size:13px!important;padding:4px 8px!important;margin-top:4px!important}
+}
+@media(max-height:850px){
+ body.playing #game #players .player{padding-top:6px!important;padding-bottom:6px!important}
+ body.playing #game #players .player .score{font-size:56px!important}
+ body.playing #game #players .player .meta{line-height:1.2!important}
+}
+/* v31: viimase viie viske tulemused selgemalt loetavad */
+.last-visits{gap:3px!important;margin-top:6px!important}
+.last-visits span{flex:1 1 0!important;min-width:0!important;padding:4px 1px!important;font-size:13px!important;line-height:1.15!important;border-radius:5px!important}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div><div class="logo">DARTS SCORE</div><div class="tag">PERSONAL SCOREKEEPER</div></div><div class="tag" id="saveState">SALVESTATUD</div></header>
+
+<main id="setup">
+<h1>Uus mänguseeria</h1>
+<div class="panel">
+<h2>Mängijad</h2>
+<label>Mängija 1</label><input id="p1" maxlength="24" value="Mängija 1">
+<label>Mängija 2</label><input id="p2" maxlength="24" value="Mängija 2">
+</div>
+<div class="panel">
+<h2>Mänguseeria</h2>
+<label>Mänge kokku</label><input id="gamesTotal" type="number" inputmode="numeric" min="1" max="20" value="3">
+<label>Iga mängu legide võitude arv</label><div class="row" id="legsChoices"></div>
+<label>Algpunktid</label><div class="row" id="startChoices"></div>
+<label>Lõpetamine</label><div class="row" id="outChoices"></div>
+<button class="primary" id="startBtn">ALUSTA MÄNGUSEERIAT</button>
+</div>
+<div class="panel"><h2>Salvestatud ajalugu</h2><div id="historyPreview" class="muted small">Mänge pole veel salvestatud.</div><button class="secondary" id="viewHistory" style="width:100%;margin-top:12px">VAATA AJALUGU</button></div>
+</main>
+
+<main id="game" class="hidden">
+
+<div class="row" style="align-items:center"><div><div class="tag" id="gameLabel">MÄNG 1 / 3</div><div class="small muted" id="formatLabel">501 · 3 LEGI VÕIDUNI</div></div></div>
+<div class="players" style="margin-top:14px" id="players"></div>
+<div class="panel center">
+
+<div class="entry" id="entryDisplay">—</div>
+<div id="entryHint" style="display:none"></div>
+
+<div class="keypad" id="keypad"></div>
+
+<div class="finishrow">
+<button class="finish" data-finish="1">HOIA<br>1 NOOL</button>
+<button class="finish" data-finish="2">HOIA<br>2 NOOLT</button>
+<button class="finish" data-finish="3">HOIA<br>3 NOOLT</button>
+</div>
+</div>
+
+
+<div class="panel">
+<h2>Legide seis</h2><div class="statsline"><span id="legName1"></span><strong id="legScore1">0</strong></div><div class="statsline"><span id="legName2"></span><strong id="legScore2">0</strong></div>
+
+</div>
+<div class="row game-controls"><button class="secondary" id="undoBtn">↶ TAGASI</button><button class="secondary danger" id="quitBtn">KATKESTA</button></div>
+</main>
+
+<main id="matchEnd" class="hidden">
+<h1 id="winnerTitle">Mäng lõppenud</h1>
+<div class="panel" id="matchSummary"></div>
+<button class="primary" id="nextGameBtn">JÄRGMINE MÄNG</button>
+<button class="secondary" id="endSeriesBtn" style="width:100%;margin-top:10px">LÕPETA SEERIA</button>
+</main>
+
+<main id="seriesEnd" class="hidden">
+<h1>Seeria tulemused</h1><div class="panel" id="seriesSummary"></div>
+<button class="primary" id="newSeriesBtn">UUS MÄNGUSEERIA</button>
+</main>
+
+<main id="historyScreen" class="hidden">
+<h1>Mängude ajalugu</h1><div class="panel" id="historyList"></div>
+<button class="secondary" id="backSetup" style="width:100%">TAGASI</button>
+</main>
+<footer>Andmed salvestatakse selles seadmes.</footer>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+let cfg={legs:3,start:501,out:'double'};
+let S=null, entry='', undoState=null, undoStack=[], holdTimer=null, holdFired=false;
+let persistent=[];
+try{persistent=JSON.parse(localStorage.getItem('dartsHistory')||'[]');if(!Array.isArray(persistent))persistent=[];}catch(e){persistent=[];}
+let savedSetup={};
+try{savedSetup=JSON.parse(localStorage.getItem('dartsSetup')||'{}')||{};}catch(e){savedSetup={};}
+if(savedSetup.names){$('p1').value=savedSetup.names[0]||'Mängija 1';$('p2').value=savedSetup.names[1]||'Mängija 2';}
+if(savedSetup.gamesTotal)$('gamesTotal').value=savedSetup.gamesTotal;
+function saveSetup(){
+ const data={names:[$('p1').value,$('p2').value],gamesTotal:$('gamesTotal').value};
+ try{localStorage.setItem('dartsSetup',JSON.stringify(data));}catch(e){}
+}
+$('p1').addEventListener('input',saveSetup);
+$('p2').addEventListener('input',saveSetup);
+$('gamesTotal').addEventListener('input',saveSetup);
+function save(){try{localStorage.setItem('dartsHistory',JSON.stringify(persistent));}catch(e){} $('saveState').textContent='SALVESTATUD';}
+function show(id){['setup','game','matchEnd','seriesEnd','historyScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.body.classList.toggle('playing',id==='game');} 
+
+
+function choices(id,values,selected,fn){$(id).innerHTML='';values.forEach(v=>{let b=document.createElement('button');b.className='choice'+(v[0]===selected?' active':'');b.textContent=v[1];b.onclick=()=>fn(v[0]);$(id).appendChild(b);});}
+function setupChoices(){
+ choices('legsChoices',[1,2,3,4,5,6,7,9,11].map(x=>[x,String(x)]),cfg.legs,v=>{cfg.legs=v;setupChoices();});
+ choices('startChoices',[[301,'301'],[501,'501']],cfg.start,v=>{cfg.start=v;setupChoices();});
+ choices('outChoices',[['double','Double Out'],['straight','Straight Out']],cfg.out,v=>{cfg.out=v;setupChoices();});
+}
+setupChoices();
+function stat(){return {points:0,darts:0,high:0,visits:0};}
+function avg(x){return x.darts?(x.points/x.darts*3).toFixed(2):'0.00';}
+function startSeries(){
+ saveSetup();
+ let n=+$('gamesTotal').value;if(!Number.isInteger(n)||n<1||n>20){alert('Vali 1–20 mängu.');return;}
+ let names=[$('p1').value.trim()||'Mängija 1',$('p2').value.trim()||'Mängija 2'];
+ S={names,total:n,gameNo:1,seriesWins:[0,0],results:[],legs:[0,0],score:[cfg.start,cfg.start],turn:0,legStats:[stat(),stat()],gameStats:[stat(),stat()],legHistory:[],visitHistory:[[],[]]};
+ startGame();show('game');
+}
+function startGame(){S.legs=[0,0];S.score=[cfg.start,cfg.start];S.turn=0;S.legStats=[stat(),stat()];S.gameStats=[stat(),stat()];S.legHistory=[];entry='';undoState=null;render();}
+function gameLegDetails(playerIndex){
+ return (S.legHistory||[]).map(leg=>leg.winner===playerIndex?'1':'0').join(' · ') || '–';
+}
+function render(){
+ $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 34`;
+ $('players').innerHTML='';
+ S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta" style="font-size:14px!important;line-height:1.3!important;text-align:center;white-space:normal;transform:none!important">LEGI AVG <b style="font-size:14px!important">${avg(S.legStats[i])}</b><br>MÄNGU AVG <b style="font-size:14px!important">${avg(S.gameStats[i])}</b><br>LEGI NOOLED <b style="font-size:14px!important">${S.legStats[i].darts}</b><br><span style="font-size:12px;font-weight:700">LEGI SEIS</span><br><b style="font-size:16px!important">${S.legs[i]}</b></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);});
+ $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=entry?'Punktisumma':'Sisesta kolme noole summa';
+ $('legName1').textContent=S.names[0];$('legName2').textContent=S.names[1];$('legScore1').textContent=S.legs[0];$('legScore2').textContent=S.legs[1];
+ $('undoBtn').disabled=!undoState;$('undoBtn').style.opacity=undoState?1:.45;
+}
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function keypad(){let vals=['1','2','3','4','5','6','7','8','9','⌫','0','OK'];$('keypad').innerHTML='';vals.forEach(v=>{let b=document.createElement('button');b.className='key'+(v==='OK'?' ok':v==='⌫'?' del':'');b.textContent=v;b.onclick=()=>{if(v==='OK')submitVisit();else if(v==='⌫')entry=entry.slice(0,-1);else if(entry.length<3)entry+=v;render();};$('keypad').appendChild(b);});}
+function snapshot(){return JSON.parse(JSON.stringify({score:S.score,turn:S.turn,legs:S.legs,legStats:S.legStats,gameStats:S.gameStats,legHistory:S.legHistory,visitHistory:S.visitHistory}));}
+function recordVisit(i,value){if(!S.visitHistory)S.visitHistory=[[],[]];S.visitHistory[i].push(value);if(S.visitHistory[i].length>5)S.visitHistory[i].shift();}
+function restore(){if(!undoStack.length)return;let previous=undoStack.pop();Object.assign(S,previous);undoState=undoStack.length?undoStack[undoStack.length-1]:null;entry='';render();}
+function addDarts(i,n){S.legStats[i].darts+=n;S.gameStats[i].darts+=n;}
+function submitVisit(){
+ if(entry===''){return;}let v=+entry;if(!Number.isInteger(v)||v<0||v>180){alert('Sisesta 0–180.');return;}
+ let i=S.turn,remaining=S.score[i]-v;undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
+ if(remaining<0||remaining===1||(remaining===0&&cfg.out==='double')){recordVisit(i,'BUST');addDarts(i,3);S.legStats[i].visits++;S.gameStats[i].visits++;S.turn=1-i;entry='';render();alert('BUST – skoor jääb samaks.');return;}
+ if(remaining===0){undoStack.pop();undoState=undoStack.length?undoStack[undoStack.length-1]:null;entry='';alert('Double Out: lõpeta pika vajutusega 1, 2 või 3.');return;}
+ recordVisit(i,v);S.score[i]=remaining;S.legStats[i].points+=v;S.gameStats[i].points+=v;S.legStats[i].darts+=3;S.gameStats[i].darts+=3;S.legStats[i].visits++;S.gameStats[i].visits++;S.legStats[i].high=Math.max(S.legStats[i].high,v);S.gameStats[i].high=Math.max(S.gameStats[i].high,v);S.turn=1-i;entry='';render();
+}
+function canCheckout(score,darts){
+ if(cfg.out==='straight')return score>=0&&score<=60*darts;
+ // Search legal dart scores; final dart must be a double (2..40, bull 50).
+ let finals=[];for(let n=1;n<=20;n++)finals.push(n*2);finals.push(50);
+ if(darts===1)return finals.includes(score);
+ for(let a=0;a<=60;a++){for(let b=0;b<=60;b++){if(finals.includes(score-a-b))return true;}}
+ return false;
+}
+function finishByDarts(n){
+ let score=S.score[S.turn],i=S.turn;
+ if(!canCheckout(score,n)){alert(`Skoori ${score} ei saa selle reegli järgi ${n} noolega lõpetada.`);return;}
+ undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
+ S.legStats[i].points+=score;S.gameStats[i].points+=score;
+ S.legStats[i].darts+=n;S.gameStats[i].darts+=n;
+ S.legStats[i].visits++;S.gameStats[i].visits++;
+ recordVisit(i,score);
+ S.legStats[i].high=Math.max(S.legStats[i].high,score);S.gameStats[i].high=Math.max(S.gameStats[i].high,score);
+ S.score[i]=0;
+ finishLeg(i,n);
+}
+function finishLeg(winner,darts){
+ S.legs[winner]++;S.legHistory.push({winner,stats:S.legStats.map(x=>({...x}))});
+ if(S.legs[winner]>=cfg.legs){finishMatch(winner);return;}
+ S.score=[cfg.start,cfg.start];S.legStats=[stat(),stat()];S.turn=1-winner;undoState=null;undoStack=[];render();
+ alert(`${S.names[winner]} võitis legi!`);
+}
+function finishMatch(winner){
+ S.seriesWins[winner]++;
+ let result={gameNo:S.gameNo,names:[...S.names],winner,legs:[...S.legs],stats:S.gameStats.map(x=>({...x})),legHistory:S.legHistory.map(x=>({...x}))};
+ S.results.push(result);persistent.unshift({date:new Date().toISOString(),...result});persistent=persistent.slice(0,200);save();
+ $('winnerTitle').textContent=S.names[winner]+' VÕITIS MÄNGU!';
+ $('matchSummary').innerHTML=S.names.map((n,i)=>`<div class="statsline"><span>${esc(n)}</span><strong>${S.legs[i]} legi · AVG ${avg(S.gameStats[i])} · ${S.gameStats[i].darts} noolt</strong></div>`).join('')+`<p class="muted small">Mäng ${S.gameNo} / ${S.total}</p>`;
+ $('nextGameBtn').textContent=S.gameNo<S.total?'JÄRGMINE MÄNG':'VAATA SEERIA TULEMUST';
+ show('matchEnd');
+}
+function finishSeries(){
+ $('seriesSummary').innerHTML=`<h2>${esc(S.names[0])} ${S.seriesWins[0]} : ${S.seriesWins[1]} ${esc(S.names[1])}</h2>`+S.results.map(r=>`<div class="historyitem">Mäng ${r.gameNo}: ${esc(r.names[r.winner])} võitis · ${r.legs.join(' : ')}</div>`).join('');
+ show('seriesEnd');
+}
+function nextGame(){if(S.gameNo>=S.total){finishSeries();return;}S.gameNo++;startGame();show('game');}
+function holdStart(n){holdFired=false;holdTimer=setTimeout(()=>{holdFired=true;finishByDarts(n);},500);}
+function holdEnd(){clearTimeout(holdTimer);}
+document.querySelectorAll('[data-finish]').forEach(b=>{
+ let n=+b.dataset.finish;
+ b.addEventListener('pointerdown',e=>{e.preventDefault();holdStart(n);});
+ ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,holdEnd));
+ b.addEventListener('click',e=>{if(!holdFired){/* short tap deliberately does nothing */}holdFired=false;});
+});
+$('startBtn').onclick=startSeries;
+$('undoBtn').onclick=restore;
+$('quitBtn').onclick=()=>{if(confirm('Katkestan käimasoleva mängu? Seda mängu ei salvestata.'))show('setup');};
+$('nextGameBtn').onclick=nextGame;
+$('endSeriesBtn').onclick=finishSeries;
+$('newSeriesBtn').onclick=()=>show('setup');
+$('viewHistory').onclick=()=>{ $('historyList').innerHTML=persistent.length?persistent.map(h=>`<div class="historyitem"><b>${esc(h.names[h.winner])}</b> võitis · ${esc(h.names[0])} ${h.legs[0]}:${h.legs[1]} ${esc(h.names[1])}<br><span class="muted small">${new Date(h.date).toLocaleString('et-EE')} · AVG ${avg(h.stats[0])} / ${avg(h.stats[1])}</span></div>`).join(''):'Ajaloos pole veel mänge.';show('historyScreen');};
+$('backSetup').onclick=()=>show('setup');
+keypad();
+$('historyPreview').textContent=persistent.length?`${persistent.length} salvestatud mängu.`:'Mänge pole veel salvestatud.';
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}</script></body></html>
