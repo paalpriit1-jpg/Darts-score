@@ -396,7 +396,8 @@ body.playing #game .game-controls .secondary{height:54px!important;min-height:54
 <main id="matchEnd" class="hidden">
 <h1 id="winnerTitle">Mäng lõppenud</h1>
 <div class="panel" id="matchSummary"></div>
-<button class="secondary" id="undoMatchBtn" style="width:100%;margin-top:10px">↶ TAGASI</button>\n<button class="primary" id="nextGameBtn">JÄRGMINE MÄNG</button>
+<button class="secondary" id="undoMatchBtn" style="width:100%;margin-top:10px">↶ TAGASI</button>
+<button class="primary" id="nextGameBtn">JÄRGMINE MÄNG</button>
 <button class="secondary" id="endSeriesBtn" style="width:100%;margin-top:10px">LÕPETA SEERIA</button>
 </main>
 
@@ -520,7 +521,8 @@ document.querySelectorAll('[data-finish]').forEach(b=>{
  b.addEventListener('click',()=>finishByDarts(n));
 });
 $('startBtn').onclick=startSeries;
-$('undoBtn').onclick=restore;\n$('undoMatchBtn').onclick=restore;
+$('undoBtn').onclick=restore;
+$('undoMatchBtn').onclick=restore;
 $('quitBtn').onclick=()=>{if(confirm('Katkestan käimasoleva mängu? Seda mängu ei salvestata.'))show('setup');};
 $('nextGameBtn').onclick=nextGame;
 $('endSeriesBtn').onclick=finishSeries;
