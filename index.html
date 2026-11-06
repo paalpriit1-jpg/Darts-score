@@ -430,7 +430,7 @@ $('p1').addEventListener('input',saveSetup);
 $('p2').addEventListener('input',saveSetup);
 $('gamesTotal').addEventListener('input',saveSetup);
 function save(){try{localStorage.setItem('dartsHistory',JSON.stringify(persistent));}catch(e){} $('saveState').textContent='SALVESTATUD';}
-function show(id){['setup','game','matchEnd','seriesEnd','historyScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.body.classList.toggle('playing',id==='game');} 
+function show(id){['setup','game','matchEnd','seriesEnd','historyScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.body.classList.toggle('playing',id==='game');if(id==='historyScreen'||id==='setup')window.scrollTo(0,0);} 
 
 
 function choices(id,values,selected,fn){$(id).innerHTML='';values.forEach(v=>{let b=document.createElement('button');b.className='choice'+(v[0]===selected?' active':'');b.textContent=v[1];b.onclick=()=>fn(v[0]);$(id).appendChild(b);});}
