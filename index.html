@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#101923">
+<meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Darts Score">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon.svg">
 <title>Darts Score</title>
 <style>
-:root{--bg:#101923;--panel:#203344;--panel2:#293f51;--muted:#a7b8c7;--white:#f7fafc;--green:#16834a;--green2:#20a663;--red:#a33a36;--line:#405466}
+:root{--bg:#000000;--panel:#203344;--panel2:#293f51;--muted:#a7b8c7;--white:#f7fafc;--green:#16834a;--green2:#20a663;--red:#a33a36;--line:#405466}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
 button,input,select{font:inherit}button{border:0;cursor:pointer;color:var(--white);touch-action:manipulation}
 .app{max-width:560px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
@@ -393,6 +393,17 @@ body.playing #game .keypad .key:nth-last-child(-n+3){border-bottom-width:2px!imp
 }
 
 
+/* v55: prevent text selection and native long-press callouts on iOS and Android keypad */
+/* v57: pure black app background */
+body.playing #game .keypad,
+body.playing #game .keypad .key{
+ -webkit-user-select:none!important;
+ user-select:none!important;
+ -webkit-touch-callout:none!important;
+ -webkit-tap-highlight-color:transparent;
+}
+body.playing #game .keypad .key{-webkit-user-drag:none!important;}
+
 /* v52: input, history controls and keypad layout */
 .header-actions{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
 .close-game{background:var(--red);color:#fff;border-radius:7px;width:30px;height:27px;padding:0;font-size:23px;line-height:23px;font-weight:700}
@@ -525,10 +536,10 @@ window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120))
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 54`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 56`;
  $('players').innerHTML='';
- S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta" style="font-size:14px!important;line-height:1.3!important;text-align:center;white-space:normal;transform:none!important">LEGI AVG <b style="font-size:14px!important">${avg(S.legStats[i])}</b><br>MÄNGU AVG <b style="font-size:14px!important">${avg(S.seriesStats?.[i]||stat())}</b><br>LEGI NOOLED <b style="font-size:14px!important">${S.legStats[i].darts}</b><br><span class="setleg-inline"><b>SETS:</b> ${S.seriesWins[i]} <b>LEGS:</b> ${S.legs[i]}</span></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit();});});
- $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=entry?'Punktisumma · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta kolme noole summa · hoia 1, 2 või 3 all lõpetamiseks';
+ S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta" style="font-size:14px!important;line-height:1.3!important;text-align:center;white-space:normal;transform:none!important">LEGI AVG <b style="font-size:14px!important">${avg(S.legStats[i])}</b><br>MÄNGU AVG <b style="font-size:14px!important">${avg(S.seriesStats?.[i]||stat())}</b><br>LEGI NOOLED <b style="font-size:14px!important">${S.legStats[i].darts}</b><br><span class="setleg-inline"><b>SETS:</b> ${S.seriesWins[i]} <b>LEGS:</b> ${S.legs[i]}</span></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit(true);});});
+ $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=entry?'OK = punktid · mängija kast = soovitud jääk · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta punktid või soovitud jääk';
  $('undoBtn').disabled=!undoStack.length;$('undoBtn').style.opacity=undoStack.length?1:.45;
  $('redoBtn').disabled=!redoStack.length;$('redoBtn').style.opacity=redoStack.length?1:.45;
  $('closeGameBtn').classList.toggle('hidden',!document.body.classList.contains('playing'));
@@ -538,7 +549,7 @@ function keypad(){
  let vals=['1','2','3','4','5','6','7','8','9','⌫','0','OK'];
  $('keypad').innerHTML='';
  vals.forEach(v=>{
-  let b=document.createElement('button');b.className='key'+(v==='OK'?' ok':v==='⌫'?' del':'');b.textContent=v;
+  let b=document.createElement('button');b.className='key'+(v==='OK'?' ok':v==='⌫'?' del':'');b.textContent=v;b.setAttribute('draggable','false');b.addEventListener('contextmenu',e=>e.preventDefault());b.addEventListener('selectstart',e=>e.preventDefault());
   let timer=null,held=false;
   if(['1','2','3'].includes(v)){
    b.addEventListener('pointerdown',e=>{held=false;timer=setTimeout(()=>{held=true;finishByDarts(Number(v));},550);});
@@ -573,9 +584,14 @@ function redo(){
  entry='';show('game');render();
 }
 function addDarts(i,n){S.legStats[i].darts+=n;S.gameStats[i].darts+=n;}
-function submitVisit(){
- let v=entry===''?0:+entry;if(!Number.isInteger(v)||v<0||v>180){alert('Sisesta 0–180.');return;}
- let i=S.turn,remaining=S.score[i]-v;redoStack=[];undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
+function submitVisit(asRemaining=false){
+ let input=entry===''?0:+entry;
+ if(!Number.isInteger(input)||input<0||input>180){alert('Sisesta 0–180.');return;}
+ let i=S.turn;
+ if(asRemaining&&input>S.score[i]){alert(`Jääk ei saa olla suurem kui praegune skoor (${S.score[i]}).`);return;}
+ let v=asRemaining?S.score[i]-input:input;
+ if(v>180){alert('Ühe käiguga ei saa sisestada üle 180 punkti.');return;}
+ let remaining=S.score[i]-v;redoStack=[];undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
  if(remaining<0||remaining===1||(remaining===0&&cfg.out==='double')){recordVisit(i,'BUST');addDarts(i,3);S.seriesStats[i].darts+=3;S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;S.turn=1-i;entry='';render();alert('BUST – skoor jääb samaks.');return;}
  if(remaining===0){undoStack.pop();undoState=undoStack.length?undoStack[undoStack.length-1]:null;entry='';alert('Double Out: lõpeta pika vajutusega 1, 2 või 3.');return;}
  recordVisit(i,v);S.score[i]=remaining;S.legStats[i].points+=v;S.gameStats[i].points+=v;S.seriesStats[i].points+=v;S.legStats[i].darts+=3;S.gameStats[i].darts+=3;S.seriesStats[i].darts+=3;S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;S.legStats[i].high=Math.max(S.legStats[i].high,v);S.gameStats[i].high=Math.max(S.gameStats[i].high,v);S.seriesStats[i].high=Math.max(S.seriesStats[i].high,v);S.turn=1-i;entry='';render();
