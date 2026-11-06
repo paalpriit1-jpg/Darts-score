@@ -350,6 +350,14 @@ body.playing #game .game-controls .secondary{height:54px!important;min-height:54
 @media (max-width: 700px){
   body.phone-fit.playing .app{zoom:var(--auto-fit-zoom,1)!important}
 }
+
+/* v50: SETS/LEGS lives inside each player card; keypad gets the freed space */
+body.playing #game .setleg-inline{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:3px;font-size:13px!important;line-height:1.2!important;color:#f7fafc;white-space:nowrap}
+body.playing #game .setleg-inline b{color:#a7b8c7;font-size:11px!important}
+body.playing #game .keypad{gap:6px!important;margin-top:6px!important}
+body.playing #game .keypad .key{height:clamp(54px,9.5vh,76px)!important;min-height:clamp(54px,9.5vh,76px)!important;padding:5px!important;font-size:23px!important;border-radius:12px!important;aspect-ratio:1.25 / 1}
+body.playing #game .keypad .key.ok,body.playing #game .keypad .key.del{font-size:20px!important}
+@media(max-height:650px){body.playing #game .keypad .key{height:clamp(46px,8.5vh,58px)!important;min-height:clamp(46px,8.5vh,58px)!important}}
 </style>
 </head>
 <body>
@@ -388,10 +396,6 @@ body.playing #game .game-controls .secondary{height:54px!important;min-height:54
 </div>
 
 
-<div class="panel">
-<h2>SETS / LEGS</h2><div class="statsline"><span id="legName1"></span><strong>SETS: <span id="setScore1">0</span> &nbsp; LEGS: <span id="legScore1">0</span></strong></div><div class="statsline"><span id="legName2"></span><strong>SETS: <span id="setScore2">0</span> &nbsp; LEGS: <span id="legScore2">0</span></strong></div>
-
-</div>
 <div class="row game-controls"><button class="secondary" id="undoBtn">↶ TAGASI</button><button class="secondary danger" id="quitBtn">LÕPETA</button></div>
 </main>
 
@@ -481,11 +485,10 @@ window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120))
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 49`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 50`;
  $('players').innerHTML='';
- S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta" style="font-size:14px!important;line-height:1.3!important;text-align:center;white-space:normal;transform:none!important">LEGI AVG <b style="font-size:14px!important">${avg(S.legStats[i])}</b><br>MÄNGU AVG <b style="font-size:14px!important">${avg(S.gameStats[i])}</b><br>LEGI NOOLED <b style="font-size:14px!important">${S.legStats[i].darts}</b><br><b style="font-size:16px!important">${S.legs[i]}</b></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit();});});
+ S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta" style="font-size:14px!important;line-height:1.3!important;text-align:center;white-space:normal;transform:none!important">LEGI AVG <b style="font-size:14px!important">${avg(S.legStats[i])}</b><br>MÄNGU AVG <b style="font-size:14px!important">${avg(S.gameStats[i])}</b><br>LEGI NOOLED <b style="font-size:14px!important">${S.legStats[i].darts}</b><br><span class="setleg-inline"><b>SETS:</b> ${S.seriesWins[i]} <b>LEGS:</b> ${S.legs[i]}</span></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit();});});
  $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=entry?'Punktisumma · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta kolme noole summa · hoia 1, 2 või 3 all lõpetamiseks';
- $('legName1').textContent=S.names[0];$('legName2').textContent=S.names[1];$('setScore1').textContent=S.seriesWins[0];$('setScore2').textContent=S.seriesWins[1];$('legScore1').textContent=S.legs[0];$('legScore2').textContent=S.legs[1];
  $('undoBtn').disabled=!undoState;$('undoBtn').style.opacity=undoState?1:.45;
  requestAnimationFrame(fitGameToScreen);
 }
