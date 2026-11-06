@@ -410,7 +410,20 @@ body.playing #game .keypad .key{-webkit-user-drag:none!important;}
 body.playing #game .game-controls{display:flex!important;gap:8px!important;margin:8px 0!important}
 body.playing #game .game-controls .secondary{flex:1;height:42px!important;min-height:42px!important;padding:7px!important;font-size:14px!important}
 body.playing #game .entry-panel{margin:7px 0 4px!important;padding:5px 10px!important}
-body.playing #game .entry{font-size:56px!important;font-weight:900!important;line-height:1.05!important;height:auto!important;min-height:58px!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important}
+body.playing #game .entry{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ width:100%!important;height:58px!important;min-height:58px!important;max-height:58px!important;
+ box-sizing:border-box!important;overflow:hidden!important;white-space:nowrap!important;
+ font-size:56px!important;font-weight:900!important;line-height:58px!important;
+ margin:0!important;padding:0!important;
+}
+body.playing #game #entryHint{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ height:16px!important;min-height:16px!important;max-height:16px!important;
+ margin:4px 0 0!important;padding:0!important;overflow:hidden!important;
+ white-space:nowrap!important;text-overflow:ellipsis!important;
+ font-size:9px!important;line-height:16px!important;
+}
 body.playing #game .keypad{margin-top:4px!important}
 body.playing #game .keypad .key{height:clamp(48px,8vh,68px)!important;min-height:clamp(48px,8vh,68px)!important;max-height:clamp(48px,8vh,68px)!important}
 
@@ -443,6 +456,20 @@ select,
 .finish{border:1px solid #929292;}
 .history-avg-player{border-radius:11px;}
 
+
+/* v59: keep entry display and hint at fixed heights so the keypad never shifts while typing */
+body.playing #game .entry-panel{display:block!important}
+body.playing #game .entry-panel #entryDisplay{
+ height:58px!important;min-height:58px!important;max-height:58px!important;
+ line-height:58px!important;overflow:hidden!important;white-space:nowrap!important;
+}
+body.playing #game .entry-panel #entryHint{
+ height:16px!important;min-height:16px!important;max-height:16px!important;
+ line-height:16px!important;overflow:hidden!important;white-space:nowrap!important;
+}
+
+/* v60: no helper text beneath the entered number */
+body.playing #game .entry-panel #entryHint{display:none!important;height:0!important;min-height:0!important;max-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
 </style>
 </head>
 <body>
@@ -565,7 +592,7 @@ window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120))
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 58`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 60`;
  $('players').innerHTML='';
  S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta" style="font-size:14px!important;line-height:1.3!important;text-align:center;white-space:normal;transform:none!important">LEGI AVG <b style="font-size:14px!important">${avg(S.legStats[i])}</b><br>MÄNGU AVG <b style="font-size:14px!important">${avg(S.seriesStats?.[i]||stat())}</b><br>LEGI NOOLED <b style="font-size:14px!important">${S.legStats[i].darts}</b><br><span class="setleg-inline"><b>SETS:</b> ${S.seriesWins[i]} <b>LEGS:</b> ${S.legs[i]}</span></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit(true);});});
  $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=entry?'OK = punktid · mängija kast = soovitud jääk · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta punktid või soovitud jääk';
