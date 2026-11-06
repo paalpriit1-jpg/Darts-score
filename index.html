@@ -392,11 +392,22 @@ body.playing #game .keypad .key:nth-last-child(-n+3){border-bottom-width:2px!imp
  body.playing #game .keypad .key{height:clamp(44px,7.5vh,58px)!important;min-height:clamp(44px,7.5vh,58px)!important;max-height:clamp(44px,7.5vh,58px)!important}
 }
 
+
+/* v52: input, history controls and keypad layout */
+.header-actions{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.close-game{background:var(--red);color:#fff;border-radius:7px;width:30px;height:27px;padding:0;font-size:23px;line-height:23px;font-weight:700}
+body.playing #game .game-controls{display:flex!important;gap:8px!important;margin:8px 0!important}
+body.playing #game .game-controls .secondary{flex:1;height:42px!important;min-height:42px!important;padding:7px!important;font-size:14px!important}
+body.playing #game .entry-panel{margin:7px 0 4px!important;padding:5px 10px!important}
+body.playing #game .entry{font-size:56px!important;font-weight:900!important;line-height:1.05!important;height:auto!important;min-height:58px!important;max-height:none!important;margin:0!important;padding:0!important;overflow:visible!important}
+body.playing #game .keypad{margin-top:4px!important}
+body.playing #game .keypad .key{height:clamp(48px,8vh,68px)!important;min-height:clamp(48px,8vh,68px)!important;max-height:clamp(48px,8vh,68px)!important}
+
 </style>
 </head>
 <body>
 <div class="app">
-<header><div><div class="logo">DARTS SCORE</div><div class="tag">PERSONAL SCOREKEEPER</div></div><div class="tag" id="saveState">SALVESTATUD</div></header>
+<header><div><div class="logo">DARTS SCORE</div><div class="tag">PERSONAL SCOREKEEPER</div></div><div class="header-actions"><div class="tag" id="saveState">SALVESTATUD</div><button class="close-game hidden" id="closeGameBtn" aria-label="Sulge mäng">×</button></div></header>
 
 <main id="setup">
 <h1>Uus mänguseeria</h1>
@@ -420,17 +431,12 @@ body.playing #game .keypad .key:nth-last-child(-n+3){border-bottom-width:2px!imp
 
 <div class="row" style="align-items:center"><div><div class="tag" id="gameLabel">MÄNG 1 / 3</div><div class="small muted" id="formatLabel">501 · 3 LEGI VÕIDUNI</div></div></div>
 <div class="players" style="margin-top:14px" id="players"></div>
-<div class="panel center">
-
+<div class="row game-controls"><button class="secondary" id="undoBtn">↶ TAGASI</button><button class="secondary" id="redoBtn">EDASI ↷</button></div>
+<div class="panel center entry-panel">
 <div class="entry" id="entryDisplay">—</div>
-<div id="entryHint" class="muted small" style="margin-top:4px">Hoia klahvi 1, 2 või 3 all, et lõpetada vastava noolte arvuga.</div>
-
-<div class="keypad" id="keypad"></div>
-
+<div id="entryHint" class="muted small" style="margin-top:4px">Sisesta kolme noole summa · hoia 1, 2 või 3 all lõpetamiseks</div>
 </div>
-
-
-<div class="row game-controls"><button class="secondary" id="undoBtn">↶ TAGASI</button><button class="secondary danger" id="quitBtn">LÕPETA</button></div>
+<div class="keypad" id="keypad"></div>
 </main>
 
 <main id="matchEnd" class="hidden">
@@ -456,7 +462,7 @@ body.playing #game .keypad .key:nth-last-child(-n+3){border-bottom-width:2px!imp
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
 const $=id=>document.getElementById(id);
 let cfg={legs:3,start:501,out:'double'};
-let S=null, entry='', undoState=null, undoStack=[], holdTimer=null, holdFired=false;
+let S=null, entry='', undoState=null, undoStack=[], redoStack=[], holdTimer=null, holdFired=false;
 let persistent=[];
 try{persistent=JSON.parse(localStorage.getItem('dartsHistory')||'[]');if(!Array.isArray(persistent))persistent=[];}catch(e){persistent=[];}
 let savedSetup={};
@@ -471,7 +477,7 @@ $('p1').addEventListener('input',saveSetup);
 $('p2').addEventListener('input',saveSetup);
 $('gamesTotal').addEventListener('input',saveSetup);
 function save(){try{localStorage.setItem('dartsHistory',JSON.stringify(persistent));}catch(e){} $('saveState').textContent='SALVESTATUD';}
-function show(id){['setup','game','matchEnd','seriesEnd','historyScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.body.classList.toggle('playing',id==='game');if(id==='historyScreen'||id==='setup')window.scrollTo(0,0);requestAnimationFrame(()=>{fitGameToScreen();updateWakeLock();});} 
+function show(id){['setup','game','matchEnd','seriesEnd','historyScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.body.classList.toggle('playing',id==='game');$('closeGameBtn').classList.toggle('hidden',id!=='game');if(id==='historyScreen'||id==='setup')window.scrollTo(0,0);requestAnimationFrame(()=>{fitGameToScreen();updateWakeLock();});} 
 
 
 function choices(id,values,selected,fn){$(id).innerHTML='';values.forEach(v=>{let b=document.createElement('button');b.className='choice'+(v[0]===selected?' active':'');b.textContent=v[1];b.onclick=()=>fn(v[0]);$(id).appendChild(b);});}
@@ -490,7 +496,7 @@ function startSeries(){
  S={names,total:n,gameNo:1,seriesWins:[0,0],results:[],legs:[0,0],score:[cfg.start,cfg.start],turn:0,legStats:[stat(),stat()],gameStats:[stat(),stat()],legHistory:[],visitHistory:[[],[]]};
  startGame();show('game');
 }
-function startGame(){S.legs=[0,0];S.score=[cfg.start,cfg.start];S.turn=0;S.legStats=[stat(),stat()];S.gameStats=[stat(),stat()];S.legHistory=[];S.visitHistory=[[],[]];entry='';undoStack=[];undoState=null;render();}
+function startGame(){S.legs=[0,0];S.score=[cfg.start,cfg.start];S.turn=0;S.legStats=[stat(),stat()];S.gameStats=[stat(),stat()];S.legHistory=[];S.visitHistory=[[],[]];entry='';undoStack=[];redoStack=[];undoState=null;render();}
 function gameLegDetails(playerIndex){
  return (S.legHistory||[]).map(leg=>leg.winner===playerIndex?'1':'0').join(' · ') || '–';
 }
@@ -519,11 +525,13 @@ window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120))
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 51`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 52`;
  $('players').innerHTML='';
  S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta" style="font-size:14px!important;line-height:1.3!important;text-align:center;white-space:normal;transform:none!important">LEGI AVG <b style="font-size:14px!important">${avg(S.legStats[i])}</b><br>MÄNGU AVG <b style="font-size:14px!important">${avg(S.gameStats[i])}</b><br>LEGI NOOLED <b style="font-size:14px!important">${S.legStats[i].darts}</b><br><span class="setleg-inline"><b>SETS:</b> ${S.seriesWins[i]} <b>LEGS:</b> ${S.legs[i]}</span></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit();});});
  $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=entry?'Punktisumma · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta kolme noole summa · hoia 1, 2 või 3 all lõpetamiseks';
- $('undoBtn').disabled=!undoState;$('undoBtn').style.opacity=undoState?1:.45;
+ $('undoBtn').disabled=!undoStack.length;$('undoBtn').style.opacity=undoStack.length?1:.45;
+ $('redoBtn').disabled=!redoStack.length;$('redoBtn').style.opacity=redoStack.length?1:.45;
+ $('closeGameBtn').classList.toggle('hidden',!document.body.classList.contains('playing'));
 }
 function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function keypad(){
@@ -539,7 +547,7 @@ function keypad(){
   }
   b.addEventListener('click',e=>{
    if(held){held=false;e.preventDefault();return;}
-   if(v==='OK')submitVisit();else if(v==='⌫')entry=entry.slice(0,-1);else if(entry.length<3)entry+=v;
+   if(v==='OK')submitVisit();else if(v==='⌫'){if(entry.length)redoStack=[];entry=entry.slice(0,-1);}else if(entry.length<3){redoStack=[];entry+=v;}
    render();
   });
   $('keypad').appendChild(b);
@@ -548,11 +556,26 @@ function keypad(){
 
 function snapshot(){return JSON.parse(JSON.stringify({state:S,persistent}));}
 function recordVisit(i,value){if(!S.visitHistory)S.visitHistory=[[],[]];S.visitHistory[i].push(value);if(S.visitHistory[i].length>5)S.visitHistory[i].shift();}
-function restore(){if(!undoStack.length)return;let previous=undoStack.pop();S=previous.state;persistent=previous.persistent;save();undoState=undoStack.length?undoStack[undoStack.length-1]:null;entry='';show('game');render();}
+function restore(){
+ if(!undoStack.length)return;
+ redoStack.push(snapshot());
+ let previous=undoStack.pop();
+ S=previous.state;persistent=previous.persistent;save();
+ undoState=undoStack.length?undoStack[undoStack.length-1]:null;
+ entry='';show('game');render();
+}
+function redo(){
+ if(!redoStack.length)return;
+ undoStack.push(snapshot());
+ let next=redoStack.pop();
+ S=next.state;persistent=next.persistent;save();
+ undoState=undoStack.length?undoStack[undoStack.length-1]:null;
+ entry='';show('game');render();
+}
 function addDarts(i,n){S.legStats[i].darts+=n;S.gameStats[i].darts+=n;}
 function submitVisit(){
  let v=entry===''?0:+entry;if(!Number.isInteger(v)||v<0||v>180){alert('Sisesta 0–180.');return;}
- let i=S.turn,remaining=S.score[i]-v;undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
+ let i=S.turn,remaining=S.score[i]-v;redoStack=[];undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
  if(remaining<0||remaining===1||(remaining===0&&cfg.out==='double')){recordVisit(i,'BUST');addDarts(i,3);S.legStats[i].visits++;S.gameStats[i].visits++;S.turn=1-i;entry='';render();alert('BUST – skoor jääb samaks.');return;}
  if(remaining===0){undoStack.pop();undoState=undoStack.length?undoStack[undoStack.length-1]:null;entry='';alert('Double Out: lõpeta pika vajutusega 1, 2 või 3.');return;}
  recordVisit(i,v);S.score[i]=remaining;S.legStats[i].points+=v;S.gameStats[i].points+=v;S.legStats[i].darts+=3;S.gameStats[i].darts+=3;S.legStats[i].visits++;S.gameStats[i].visits++;S.legStats[i].high=Math.max(S.legStats[i].high,v);S.gameStats[i].high=Math.max(S.gameStats[i].high,v);S.turn=1-i;entry='';render();
@@ -568,7 +591,7 @@ function canCheckout(score,darts){
 function finishByDarts(n){
  let score=S.score[S.turn],i=S.turn;
  if(!canCheckout(score,n)){alert(`Skoori ${score} ei saa selle reegli järgi ${n} noolega lõpetada.`);return;}
- undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
+ redoStack=[];undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
  S.legStats[i].points+=score;S.gameStats[i].points+=score;
  S.legStats[i].darts+=n;S.gameStats[i].darts+=n;
  S.legStats[i].visits++;S.gameStats[i].visits++;
@@ -602,8 +625,9 @@ function finishSeries(){
 function nextGame(){if(S.gameNo>=S.total){finishSeries();return;}S.gameNo++;startGame();show('game');}
 $('startBtn').onclick=startSeries;
 $('undoBtn').onclick=restore;
+$('redoBtn').onclick=redo;
 $('undoMatchBtn').onclick=restore;
-$('quitBtn').onclick=()=>{if(confirm('Katkestan käimasoleva mängu? Seda mängu ei salvestata.'))show('setup');};
+$('closeGameBtn').onclick=()=>{if(confirm('Katkestan käimasoleva mängu? Seda mängu ei salvestata.'))show('setup');};
 $('nextGameBtn').onclick=nextGame;
 $('endSeriesBtn').onclick=finishSeries;
 $('newSeriesBtn').onclick=()=>show('setup');
