@@ -792,7 +792,7 @@ function renderHistory(){
  const bestByPlayer=new Map();
  newestFirst.forEach(g=>g.names.forEach((name,i)=>{
   if(!name)return;const value=Number(avg(g.stats[i]));const current=bestByPlayer.get(name);
-  const minDarts=g.detailLegs.reduce((min,leg)=>{const darts=Number(leg.stats[i]?.darts)||0;return darts>0?Math.min(min,darts):min;},Infinity);
+  const minDarts=g.detailLegs.reduce((min,leg)=>{if(leg.winner!==i)return min;const darts=Number(leg.stats[i]?.darts)||0;return darts>0?Math.min(min,darts):min;},Infinity);
   if(!current||value>current.value)bestByPlayer.set(name,{value,display:avg(g.stats[i]),minDarts});
   else if(minDarts<current.minDarts)current.minDarts=minDarts;
  }));
