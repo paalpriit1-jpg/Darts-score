@@ -545,6 +545,11 @@ body.playing button,body.playing input,body.playing select{touch-action:manipula
 .player-leg-high{font-size:18px!important;line-height:1.1!important;font-weight:900!important;color:#fff!important;min-width:18px;text-align:left}
 body.playing #game #players .playername{font-size:19px!important;line-height:1.15!important;font-weight:800!important}
 
+/* v88: seadete vaade on mänguvaate moodi fikseeritud ega keri sõrmega */
+html:has(body.setup-fixed),body.setup-fixed{height:100%;height:100dvh;overflow:hidden!important;overscroll-behavior:none!important;position:fixed!important;inset:0;width:100%;}
+body.setup-fixed{touch-action:none!important;}
+body.setup-fixed .app{height:100%;height:100dvh;max-height:100dvh;overflow:hidden!important;overscroll-behavior:none!important;}
+body.setup-fixed #setup{overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important;}
 /* v87: seadete vaade jääb loetavaks; vähendame ainult liigseid vahesid */
 @media(max-width:600px) and (max-height:900px){
  body:not(.playing) .app{padding:calc(6px + env(safe-area-inset-top)) 12px calc(6px + env(safe-area-inset-bottom))!important}
@@ -637,7 +642,7 @@ $('p1').addEventListener('input',saveSetup);
 $('p2').addEventListener('input',saveSetup);
 $('gamesTotal').addEventListener('input',saveSetup);
 function save(){try{localStorage.setItem('dartsHistory',JSON.stringify(persistent));}catch(e){}}
-function show(id){['setup','game','matchEnd','seriesEnd','historyScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.body.classList.toggle('playing',id==='game');$('closeGameBtn').classList.toggle('hidden',id!=='game');if(id==='historyScreen'||id==='setup')window.scrollTo(0,0);requestAnimationFrame(()=>{fitGameToScreen();updateWakeLock();});} 
+function show(id){['setup','game','matchEnd','seriesEnd','historyScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.body.classList.toggle('playing',id==='game');document.body.classList.toggle('setup-fixed',id==='setup');$('closeGameBtn').classList.toggle('hidden',id!=='game');if(id==='historyScreen'||id==='setup')window.scrollTo(0,0);requestAnimationFrame(()=>{fitGameToScreen();updateWakeLock();});} 
 
 
 function choices(id,values,selected,fn){$(id).innerHTML='';values.forEach(v=>{let b=document.createElement('button');b.className='choice'+(v[0]===selected?' active':'');b.textContent=v[1];b.onclick=()=>fn(v[0]);$(id).appendChild(b);});}
@@ -1164,10 +1169,10 @@ $('backSetup').onclick=()=>show('setup');
 keypad();
 $('historyPreview').textContent=persistent.length?`${persistent.length} salvestatud mängu.`:'Mänge pole veel salvestatud.';
 
-// v72: block touch-driven page scrolling only during an active game.
-// Do not cancel touchstart/end: keypad taps and long-press checkout must still work.
+// v88: block touch-driven page scrolling on the setup and active game screens.
+// Do not cancel touchstart/end: controls and long-press checkout remain usable.
 document.addEventListener('touchmove',function(event){
- if(document.body.classList.contains('playing')&&event.cancelable)event.preventDefault();
+ if((document.body.classList.contains('playing')||document.body.classList.contains('setup-fixed'))&&event.cancelable)event.preventDefault();
 },{passive:false});
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(err=>console.warn("PWA:",err)));}</script></body></html>
