@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#101923">
+<meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Darts Score">
 <link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon.svg">
 <title>Darts Score</title>
 <style>
-:root{--bg:#101923;--panel:#203344;--panel2:#293f51;--muted:#a7b8c7;--white:#f7fafc;--green:#16834a;--green2:#20a663;--red:#a33a36;--line:#405466}
+:root{--bg:#000000;--panel:#203344;--panel2:#293f51;--muted:#a7b8c7;--white:#f7fafc;--green:#16834a;--green2:#20a663;--red:#a33a36;--line:#405466}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--white);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
 button,input,select{font:inherit}button{border:0;cursor:pointer;color:var(--white);touch-action:manipulation}
 .app{max-width:560px;margin:auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
@@ -33,6 +35,7 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 .playername{font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .score{font-size:43px;font-weight:900;line-height:1.2;margin:8px 0}
 .meta{font-size:11px;color:var(--muted);line-height:1.8}
+.stat-value{display:inline-block;color:#fff;font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.2px;text-shadow:0 0 .6px #fff}
 .turnpill{display:inline-block;background:#315344;color:#c5ffdf;padding:5px 9px;border-radius:99px;font-size:10px;font-weight:800;margin-top:5px}
 .last-visits{display:flex;justify-content:center;gap:4px;flex-wrap:nowrap;margin-top:5px}.last-visits span{background:#142330;border:1px solid #405466;border-radius:5px;padding:3px 4px;min-width:25px;font-size:10px;font-weight:800;color:#e8f0f6}.last-visits .bust{color:#ff9b91;border-color:#8d4944}
 .center{text-align:center}.muted{color:var(--muted)}.small{font-size:12px}
@@ -48,9 +51,31 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 .historyitem{padding:14px 0;border-bottom:1px solid #34495a}
 .history-avg-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
 .history-avg-player{background:#142330;border:1px solid #405466;border-radius:11px;padding:10px;min-width:0;text-align:center}
+.history-record-card{cursor:pointer;touch-action:manipulation}
+.history-record-card:focus{outline:2px solid #8fa6b8;outline-offset:2px}
+.history-record-stats{margin-top:9px;padding-top:8px;border-top:1px solid #405466;text-align:left}
+.history-record-stats-row{display:flex;justify-content:space-between;gap:10px;padding:4px 1px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.history-record-stats-row strong{color:#fff;font-size:13px}
 .history-avg-name{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#dce7ef}
 .history-avg-label{font-size:10px;color:var(--muted);letter-spacing:.7px;margin-top:5px}
 .history-avg-value{font-size:25px;line-height:1.2;font-weight:900;color:#fff;margin-top:2px;font-variant-numeric:tabular-nums}
+.history-series-card{cursor:pointer}
+.history-series-card:focus{outline:2px solid #8fa6b8;outline-offset:2px}
+.history-detail{margin-top:12px;padding:12px;border:1px solid #405466;border-radius:11px;background:#0b151e}
+.history-detail table{width:100%;border-collapse:collapse;table-layout:fixed;text-align:center;font-variant-numeric:tabular-nums}
+.history-detail th,.history-detail td{padding:9px 5px;border-bottom:1px solid #34495a}
+.history-detail th{font-size:12px;color:#dce7ef;overflow-wrap:anywhere}
+.history-detail td{font-size:14px}
+.history-detail td:not(:first-child){white-space:nowrap;text-align:center}
+.history-leg-cell{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;font-variant-numeric:tabular-nums}
+.history-leg-winner{display:inline-block;flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#35d06f;box-shadow:0 0 5px rgba(53,208,111,.45)}
+.history-detail th:first-child,.history-detail td:first-child{width:54px;color:var(--muted)}
+.history-best-darts{font-size:12px;color:var(--muted);margin-top:3px}
+.history-detail .history-game-detail+.history-game-detail{margin-top:18px;padding-top:14px;border-top:1px solid #405466}
+.history-game-detail>table{margin-top:7px}
+.history-game-detail>.history-avg-grid .history-avg-player{padding:8px}
+.history-best-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:7px;font-size:12px;color:var(--muted);text-align:left}
+.history-best-row strong{font-size:16px;line-height:1.2;color:#fff;font-weight:800;font-variant-numeric:tabular-nums}
 .toast{background:#2d4a3d;border-radius:10px;padding:10px;text-align:center;margin:8px 0;font-size:13px}
 footer{color:#7890a3;font-size:10px;text-align:center;margin:20px 0}
 @media(min-width:500px){.app{padding-top:28px}.score{font-size:52px}}
@@ -343,26 +368,194 @@ body.playing footer{display:none!important}
 /* v37: suuremad TAGASI/KATKESTA nupud; alumine serv jääb samale joonele */
 body.playing #game .game-controls{align-items:flex-end!important}
 body.playing #game .game-controls .secondary{height:54px!important;min-height:54px!important;padding:12px 8px!important;font-size:13px!important}
+
+/* v48: kohanda aktiivne mäng automaatselt seadme ekraani kõrgusega */
+@media (max-width: 700px){
+  body.phone-fit.playing .app{zoom:var(--auto-fit-zoom,1)!important}
+}
+
+/* v50: SETS/LEGS lives inside each player card; keypad gets the freed space */
+body.playing #game .setleg-inline{display:inline-flex;align-items:center;justify-content:center;gap:5px;margin-top:3px;font-size:13px!important;line-height:1.2!important;color:#f7fafc;white-space:nowrap}
+body.playing #game .setleg-inline b{color:#a7b8c7;font-size:11px!important}
+body.playing #game .keypad{gap:6px!important;margin-top:6px!important}
+body.playing #game .keypad .key{height:clamp(54px,9.5vh,76px)!important;min-height:clamp(54px,9.5vh,76px)!important;padding:5px!important;font-size:23px!important;border-radius:12px!important;aspect-ratio:1.25 / 1}
+body.playing #game .keypad .key.ok,body.playing #game .keypad .key.del{font-size:20px!important}
+@media(max-height:650px){body.playing #game .keypad .key{height:clamp(46px,8.5vh,58px)!important;min-height:clamp(46px,8.5vh,58px)!important}}
+ 
+/* v51: numpad nagu klassikaline ruudustik – nupud külgnevad, ilma vahedeta */
+body.playing #game .panel{width:100%;box-sizing:border-box}
+body.playing #game .entry{height:42px!important;min-height:42px!important;max-height:42px!important;box-sizing:border-box;overflow:hidden;white-space:nowrap;line-height:40px!important;margin:0!important;padding:0!important}
+body.playing #game .keypad{
+ display:grid!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:0!important;
+ width:100%!important;
+ margin:6px 0 0!important;
+ padding:0!important;
+}
+body.playing #game .keypad .key{
+ width:100%!important;
+ height:clamp(52px,8.5vh,72px)!important;
+ min-height:clamp(52px,8.5vh,72px)!important;
+ max-height:clamp(52px,8.5vh,72px)!important;
+ aspect-ratio:auto!important;
+ box-sizing:border-box!important;
+ margin:0!important;
+ border:1px solid #454545!important;
+ border-radius:0!important;
+ padding:4px!important;
+ font-size:25px!important;
+ line-height:1!important;
+}
+body.playing #game .keypad .key:first-child,
+body.playing #game .keypad .key:nth-child(2),
+body.playing #game .keypad .key:nth-child(3){border-top-width:2px!important}
+body.playing #game .keypad .key:nth-last-child(-n+3){border-bottom-width:2px!important}
+@media(max-height:650px){
+ body.playing #game .keypad .key{height:clamp(44px,7.5vh,58px)!important;min-height:clamp(44px,7.5vh,58px)!important;max-height:clamp(44px,7.5vh,58px)!important}
+}
+
+
+/* v55: prevent text selection and native long-press callouts on iOS and Android keypad */
+/* v57: pure black app background */
+body.playing #game .keypad,
+body.playing #game .keypad .key{
+ -webkit-user-select:none!important;
+ user-select:none!important;
+ -webkit-touch-callout:none!important;
+ -webkit-tap-highlight-color:transparent;
+}
+body.playing #game .keypad .key{-webkit-user-drag:none!important;}
+
+/* v52: input, history controls and keypad layout */
+.header-actions{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.close-game{background:var(--red);color:#fff;border-radius:7px;width:30px;height:27px;padding:0;font-size:23px;line-height:23px;font-weight:700}
+body.playing #game .game-controls{display:flex!important;gap:8px!important;margin:8px 0!important}
+body.playing #game .game-controls .secondary{flex:1;height:42px!important;min-height:42px!important;padding:7px!important;font-size:14px!important}
+body.playing #game .entry-panel{margin:7px 0 4px!important;padding:5px 10px!important}
+body.playing #game .entry{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ width:100%!important;height:58px!important;min-height:58px!important;max-height:58px!important;
+ box-sizing:border-box!important;overflow:hidden!important;white-space:nowrap!important;
+ font-size:56px!important;font-weight:900!important;line-height:58px!important;
+ margin:0!important;padding:0!important;
+}
+body.playing #game #entryHint{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ height:16px!important;min-height:16px!important;max-height:16px!important;
+ margin:4px 0 0!important;padding:0!important;overflow:hidden!important;
+ white-space:nowrap!important;text-overflow:ellipsis!important;
+ font-size:9px!important;line-height:16px!important;
+}
+body.playing #game .keypad{margin-top:4px!important}
+body.playing #game .keypad .key{height:clamp(48px,8vh,68px)!important;min-height:clamp(48px,8vh,68px)!important;max-height:clamp(48px,8vh,68px)!important}
+
+
+
+/* v58: pitch-black content cells with subtle silver separators */
+:root{
+ --panel:#000000;
+ --panel2:#000000;
+ --line:#777777;
+}
+.panel,
+.player,
+.key,
+.choice,
+.secondary,
+input,
+select,
+.history-avg-player,
+.last-visits span{
+ background-color:#000000;
+ border:1px solid #777777;
+}
+.player.active{border:2px solid var(--green2)!important;}
+.choice.active{background:#000000;box-shadow:0 0 0 1px var(--green2) inset;}
+.key.ok{background:var(--green);border:1px solid #929292;}
+.key.del{background:#000000;border:1px solid #929292;}
+.primary{border:1px solid #929292;}
+.secondary{border:1px solid #777777;}
+.finish{border:1px solid #929292;}
+.history-avg-player{border-radius:11px;}
+
+
+/* v59: keep entry display and hint at fixed heights so the keypad never shifts while typing */
+body.playing #game .entry-panel{display:block!important}
+body.playing #game .entry-panel #entryDisplay{
+ height:58px!important;min-height:58px!important;max-height:58px!important;
+ line-height:58px!important;overflow:hidden!important;white-space:nowrap!important;
+}
+body.playing #game .entry-panel #entryHint{
+ height:16px!important;min-height:16px!important;max-height:16px!important;
+ line-height:16px!important;overflow:hidden!important;white-space:nowrap!important;
+}
+
+/* v60: no helper text beneath the entered number */
+body.playing #game .entry-panel #entryHint{display:none!important;height:0!important;min-height:0!important;max-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
+
+/* v61: stronger, crisp numeric statistics */
+body.playing #game .meta .stat-value{
+  color:#fff!important;font-size:16px!important;font-weight:900!important;
+  line-height:1.15!important;font-variant-numeric:tabular-nums!important;
+  letter-spacing:.2px!important;text-shadow:0 0 .6px #fff!important;
+}
+
+/* v63: aligned player stats; SETS and LEGS share one row */
+body.playing #game .player-stats{
+ width:100%!important;box-sizing:border-box!important;
+ display:flex!important;flex-direction:column!important;gap:4px!important;
+ padding:0 5px!important;text-align:left!important;
+ font-size:12px!important;line-height:1.25!important;
+}
+body.playing #game .player-stats .stat-row{
+ display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;
+ align-items:center!important;column-gap:8px!important;width:100%!important;
+}
+body.playing #game .player-stats .stat-row>span:first-child,
+body.playing #game .player-stats .stat-label{
+ color:#c4cbd2!important;font-size:11px!important;font-weight:700!important;
+ letter-spacing:.25px!important;white-space:nowrap!important;
+}
+body.playing #game .player-stats .stat-value{
+ min-width:4.5ch!important;text-align:right!important;
+ color:#fff!important;font-size:15px!important;font-weight:900!important;
+ font-variant-numeric:tabular-nums!important;letter-spacing:.2px!important;
+}
+body.playing #game .player-stats .setleg-inline{
+ display:grid!important;grid-template-columns:auto auto auto auto!important;
+ justify-content:space-between!important;align-items:center!important;
+ gap:5px!important;width:100%!important;margin-top:2px!important;
+ white-space:nowrap!important;
+}
+body.playing #game .player-stats .setleg-inline .stat-value{
+ min-width:2ch!important;
+}
+
+/* v72: lock the active game viewport; other screens remain scrollable. */
+html:has(body.playing),body.playing{overflow:hidden!important;overscroll-behavior:none!important;height:100%!important;position:relative!important}
+body.playing{touch-action:none!important}
+body.playing .app,body.playing #game{overscroll-behavior:none!important;touch-action:none!important}
+body.playing button,body.playing input,body.playing select{touch-action:manipulation!important}
 </style>
 </head>
 <body>
 <div class="app">
-<header><div><div class="logo">DARTS SCORE</div><div class="tag">PERSONAL SCOREKEEPER</div></div><div class="tag" id="saveState">SALVESTATUD</div></header>
+<header><div><div class="logo">DARTS SCORE</div><div class="tag">PERSONAL SCOREKEEPER</div></div><div class="header-actions"><button class="close-game hidden" id="closeGameBtn" aria-label="Sulge mäng">×</button></div></header>
 
 <main id="setup">
-<h1>Uus mänguseeria</h1>
 <div class="panel">
 <h2>Mängijad</h2>
 <label>Mängija 1</label><input id="p1" maxlength="24" value="Mängija 1">
 <label>Mängija 2</label><input id="p2" maxlength="24" value="Mängija 2">
 </div>
 <div class="panel">
-<h2>Mänguseeria</h2>
-<label>Mänge kokku</label><input id="gamesTotal" type="number" inputmode="numeric" min="1" max="20" value="3">
+<h2>Mänge kokku</h2>
+<input id="gamesTotal" aria-label="Mänge kokku" type="number" inputmode="numeric" min="1" max="20" value="3">
 <label>Iga mängu legide võitude arv</label><div class="row" id="legsChoices"></div>
-<label>Algpunktid</label><div class="row" id="startChoices"></div>
-<label>Lõpetamine</label><div class="row" id="outChoices"></div>
-<button class="primary" id="startBtn">ALUSTA MÄNGUSEERIAT</button>
+<div class="row" id="startChoices"></div>
+<div class="row" id="outChoices"></div>
+<button class="primary" id="startBtn">START</button>
 </div>
 <div class="panel"><h2>Salvestatud ajalugu</h2><div id="historyPreview" class="muted small">Mänge pole veel salvestatud.</div><button class="secondary" id="viewHistory" style="width:100%;margin-top:12px">VAATA AJALUGU</button></div>
 </main>
@@ -371,32 +564,18 @@ body.playing #game .game-controls .secondary{height:54px!important;min-height:54
 
 <div class="row" style="align-items:center"><div><div class="tag" id="gameLabel">MÄNG 1 / 3</div><div class="small muted" id="formatLabel">501 · 3 LEGI VÕIDUNI</div></div></div>
 <div class="players" style="margin-top:14px" id="players"></div>
-<div class="panel center">
-
+<div class="row game-controls"><button class="secondary" id="undoBtn">↶ TAGASI</button><button class="secondary" id="redoBtn">EDASI ↷</button></div>
+<div class="panel center entry-panel">
 <div class="entry" id="entryDisplay">—</div>
-<div id="entryHint" style="display:none"></div>
-
+<div id="entryHint" class="muted small" style="margin-top:4px">Sisesta kolme noole summa · hoia 1, 2 või 3 all lõpetamiseks</div>
+</div>
 <div class="keypad" id="keypad"></div>
-
-<div class="finishrow">
-<button class="finish" data-finish="1">1 NOOL</button>
-<button class="finish" data-finish="2">2 NOOLT</button>
-<button class="finish" data-finish="3">3 NOOLT</button>
-</div>
-</div>
-
-
-<div class="panel">
-<h2>Mängude seis</h2><div class="statsline"><span id="legName1"></span><strong id="legScore1">0</strong></div><div class="statsline"><span id="legName2"></span><strong id="legScore2">0</strong></div>
-
-</div>
-<div class="row game-controls"><button class="secondary" id="undoBtn">↶ TAGASI</button><button class="secondary danger" id="quitBtn">KATKESTA</button></div>
 </main>
 
 <main id="matchEnd" class="hidden">
 <h1 id="winnerTitle">Mäng lõppenud</h1>
 <div class="panel" id="matchSummary"></div>
-<button class="secondary" id="undoMatchBtn" style="width:100%;margin-top:10px">↶ TAGASI</button>\n<button class="primary" id="nextGameBtn">JÄRGMINE MÄNG</button>
+<button class="secondary" id="undoMatchBtn" style="width:100%;margin-top:10px">↶ TAGASI</button><button class="primary" id="nextGameBtn">JÄRGMINE MÄNG</button>
 <button class="secondary" id="endSeriesBtn" style="width:100%;margin-top:10px">LÕPETA SEERIA</button>
 </main>
 
@@ -406,15 +585,20 @@ body.playing #game .game-controls .secondary{height:54px!important;min-height:54
 </main>
 
 <main id="historyScreen" class="hidden">
-<h1>Mängude ajalugu</h1><div class="panel" id="historyList"></div>
-<button class="secondary" id="backSetup" style="width:100%">TAGASI</button>
+<h1>Mängude ajalugu</h1>
+<div class="muted small" id="cloudStatus" style="margin:-8px 0 10px">Ühine ajalugu laadimata</div>
+<button class="secondary" id="ownerModeBtn" style="width:100%;margin:0 0 8px">KUSTUTAMISE ÕIGUS (omanik)</button>
+<button class="secondary" id="backSetup" style="width:100%;margin:0 0 12px">↶ TAGASI</button>
+<div class="panel" id="historyList"></div>
 </main>
-<footer>Andmed salvestatakse selles seadmes.</footer>
+<footer>Versioon 79 · Ajalugu sünkroonitakse Supabase’iga.</footer>
 </div>
 <script>
+document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
 const $=id=>document.getElementById(id);
 let cfg={legs:3,start:501,out:'double'};
-let S=null, entry='', undoState=null, undoStack=[], holdTimer=null, holdFired=false;
+let S=null, entry='', undoState=null, undoStack=[], redoStack=[], holdTimer=null, holdFired=false;
+let botTurnToken=0;
 let persistent=[];
 try{persistent=JSON.parse(localStorage.getItem('dartsHistory')||'[]');if(!Array.isArray(persistent))persistent=[];}catch(e){persistent=[];}
 let savedSetup={};
@@ -428,8 +612,8 @@ function saveSetup(){
 $('p1').addEventListener('input',saveSetup);
 $('p2').addEventListener('input',saveSetup);
 $('gamesTotal').addEventListener('input',saveSetup);
-function save(){try{localStorage.setItem('dartsHistory',JSON.stringify(persistent));}catch(e){} $('saveState').textContent='SALVESTATUD';}
-function show(id){['setup','game','matchEnd','seriesEnd','historyScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.body.classList.toggle('playing',id==='game');} 
+function save(){try{localStorage.setItem('dartsHistory',JSON.stringify(persistent));}catch(e){}}
+function show(id){['setup','game','matchEnd','seriesEnd','historyScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id));document.body.classList.toggle('playing',id==='game');$('closeGameBtn').classList.toggle('hidden',id!=='game');if(id==='historyScreen'||id==='setup')window.scrollTo(0,0);requestAnimationFrame(()=>{fitGameToScreen();updateWakeLock();});} 
 
 
 function choices(id,values,selected,fn){$(id).innerHTML='';values.forEach(v=>{let b=document.createElement('button');b.className='choice'+(v[0]===selected?' active':'');b.textContent=v[1];b.onclick=()=>fn(v[0]);$(id).appendChild(b);});}
@@ -441,93 +625,516 @@ function setupChoices(){
 setupChoices();
 function stat(){return {points:0,darts:0,high:0,visits:0};}
 function avg(x){return x.darts?(x.points/x.darts*3).toFixed(2):'0.00';}
+function normName(name){return String(name||'').trim().toLocaleLowerCase('et-EE');}
+function isSmartBot(){return !!(S&&S.isBotGame&&normName(S.names?.[1])==='smart');}
+function botDelay(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
+function recentHumanLegAverage(){
+ const legs=[];
+ const addLegs=(history)=>{(history||[]).slice().reverse().forEach(leg=>{const st=leg?.stats?.[0];if(st&&Number(st.darts)>0)legs.push(Number(avg(st)));});};
+ const old=[...persistent].filter(h=>normName(h.names?.[1])!=='smart'&&!h.isBotGame).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+ old.forEach(h=>addLegs(h.legHistory));
+ // Käimasoleva seeria lõpetatud setid ja leg'id lisatakse kõige värskemana.
+ (S?.results||[]).slice().reverse().forEach(r=>addLegs(r.legHistory));
+ addLegs(S?.legHistory);
+ const recent=legs.slice(0,10);
+ if(!recent.length)return 40;
+ return clamp(recent.reduce((a,b)=>a+b,0)/recent.length,25,85);
+}
+const DART_SECTORS=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+function aimForScore(score){
+ if(score===50)return {kind:'bull',number:25,label:'BULL'};
+ if(score===25)return {kind:'outerBull',number:25,label:'25'};
+ if(score>=3&&score%3===0&&score/3<=20)return {kind:'triple',number:score/3,label:`T${score/3}`};
+ if(score>=2&&score%2===0&&score/2<=20)return {kind:'double',number:score/2,label:`D${score/2}`};
+ if(score>=1&&score<=20)return {kind:'single',number:score,label:`${score}`};
+ return {kind:'triple',number:20,label:'T20'};
+}
+function checkoutPlan(score,dartsLeft){
+ const doubles=cfg.out==='double'
+  ?[...Array.from({length:20},(_,i)=>({score:(i+1)*2,aim:{kind:'double',number:i+1,label:`D${i+1}`}})),{score:50,aim:{kind:'bull',number:25,label:'BULL'}}]
+  :[
+   ...Array.from({length:20},(_,i)=>({score:i+1,aim:{kind:'single',number:i+1,label:`${i+1}`}})),
+   ...Array.from({length:20},(_,i)=>({score:(i+1)*2,aim:{kind:'double',number:i+1,label:`D${i+1}`}})),
+   ...Array.from({length:20},(_,i)=>({score:(i+1)*3,aim:{kind:'triple',number:i+1,label:`T${i+1}`}})),
+   {score:25,aim:{kind:'outerBull',number:25,label:'25'}},{score:50,aim:{kind:'bull',number:25,label:'BULL'}}
+  ];
+ const firsts=[
+  ...Array.from({length:20},(_,i)=>({score:(20-i)*3,aim:{kind:'triple',number:20-i,label:`T${20-i}`}})),
+  ...Array.from({length:20},(_,i)=>({score:(20-i)*2,aim:{kind:'double',number:20-i,label:`D${20-i}`}})),
+  ...Array.from({length:20},(_,i)=>({score:20-i,aim:{kind:'single',number:20-i,label:`${20-i}`}})),
+  {score:50,aim:{kind:'bull',number:25,label:'BULL'}},{score:25,aim:{kind:'outerBull',number:25,label:'25'}}
+ ];
+ // Kui saab lõpetada ühe noolega, ära raiska nooli kolme noole kombinatsiooni otsimisele.
+ const direct=doubles.find(x=>x.score===score);
+ if(direct)return direct.aim;
+ if(dartsLeft===1)return null;
+ if(dartsLeft>=2){for(const a of firsts){const last=doubles.find(x=>x.score===score-a.score);if(last)return a.aim;}}
+ if(dartsLeft>=3){for(const a of firsts){for(const b of firsts){const last=doubles.find(x=>x.score===score-a.score-b.score);if(last)return a.aim;}}}
+ return null;
+}
+function weightedPick(options){let total=options.reduce((n,x)=>n+x[1],0),r=Math.random()*total;for(const [value,weight] of options){r-=weight;if(r<=0)return value;}return options[options.length-1][0];}
+function simulateBotDart(aim,skill){
+ const skill01=clamp((skill-25)/60,0,1);
+ if(aim.kind==='bull'){
+  const pBull=.12+.30*skill01,p25=.28,pMiss=1-pBull-p25;
+  const score=weightedPick([[50,pBull],[25,p25],[0,pMiss]]);
+  return {score,label:score===50?'BULL':String(score),double:score===50,bull:score===50};
+ }
+ if(aim.kind==='outerBull'){
+  const score=weightedPick([[25,.48+.18*skill01],[50,.04+.08*skill01],[0,.48-.26*skill01]]);
+  return {score,label:score===50?'BULL':String(score),double:score===50,bull:score===50};
+ }
+ const n=aim.number;
+ if(aim.kind==='triple'){
+  const pTriple=clamp((skill-25)/180,.02,.34);
+  const pSingle=clamp(.32+(skill-40)*.0015,.25,.42);
+  const pAdjacent=clamp(.35-(skill-25)*.004,.13,.35);
+  const sectors=DART_SECTORS,idx=sectors.indexOf(n),left=sectors[(idx+sectors.length-1)%sectors.length],right=sectors[(idx+1)%sectors.length];
+  const score=weightedPick([[3*n,pTriple],[n,pSingle],[left,pAdjacent/2],[right,pAdjacent/2],[0,Math.max(.01,1-pTriple-pSingle-pAdjacent)]]);
+  return {score,label:score===3*n?`T${n}`:score===n?String(n):String(score),double:false,bull:false};
+ }
+ if(aim.kind==='double'){
+  const pDouble=.25+.30*skill01,pSingle=.25,pTriple=.03+.08*skill01,pAdj=.15;
+  const sectors=DART_SECTORS,idx=sectors.indexOf(n),left=sectors[(idx+sectors.length-1)%sectors.length],right=sectors[(idx+1)%sectors.length];
+  const score=weightedPick([[2*n,pDouble],[n,pSingle],[3*n,pTriple],[left,pAdj/2],[right,pAdj/2],[0,Math.max(.01,1-pDouble-pSingle-pTriple-pAdj)]]);
+  return {score,label:score===2*n?`D${n}`:score===3*n?`T${n}`:String(score),double:score===2*n,bull:false};
+ }
+ const sectors=DART_SECTORS,idx=sectors.indexOf(n),left=sectors[(idx+sectors.length-1)%sectors.length],right=sectors[(idx+1)%sectors.length];
+ const score=weightedPick([[n,.5],[2*n,.12],[3*n,.08],[left,.075],[right,.075],[0,.15]]);
+ return {score,label:score===n?String(n):score===2*n?`D${n}`:score===3*n?`T${n}`:String(score),double:score===2*n,bull:false};
+}
+function maybeStartBotTurn(){
+ if(!isSmartBot()||S.turn!==1||S.botThinking||document.getElementById('game').classList.contains('hidden'))return;
+ const token=++botTurnToken;
+ setTimeout(()=>{if(token===botTurnToken)runBotTurn(token);},250);
+}
+async function runBotTurn(token){
+ if(token!==botTurnToken||!isSmartBot()||S.turn!==1||S.botThinking)return;
+ S.botThinking=true;entry='';render();
+ const skill=recentHumanLegAverage(),throws=[];let simulatedRemaining=S.score[1];
+ $('entryHint').textContent='SMART mõtleb…';
+ for(let dartNo=0;dartNo<3;dartNo++){
+  await botDelay(360);
+  if(token!==botTurnToken||!S||!isSmartBot()||S.turn!==1)return;
+  const remaining=simulatedRemaining;
+  let aim=remaining<=170?checkoutPlan(remaining,3-dartNo):null;
+  if(!aim)aim={kind:'triple',number:20,label:'T20'};
+  const result=simulateBotDart(aim,skill);
+  throws.push(result);
+  $('entryDisplay').textContent=throws.map(x=>x.label).join(' · ');
+  $('entryHint').textContent=`SMART · sihttase AVG ${skill.toFixed(1)} · nool ${dartNo+1}/3`;
+  simulatedRemaining-=result.score;
+  if(simulatedRemaining===0&&(cfg.out==='straight'||result.double||result.bull))break;
+  if(simulatedRemaining<0||simulatedRemaining===1||(simulatedRemaining===0&&cfg.out==='double'))break;
+ }
+ await botDelay(350);
+ if(token!==botTurnToken||!S||!isSmartBot()||S.turn!==1)return;
+ applyBotVisit(throws);
+}
+function applyBotVisit(throws){
+ const i=1,before=S.score[i];let running=before,sum=0,checkout=false,bust=false,used=throws.length;
+ for(let k=0;k<throws.length;k++){
+  const dart=throws[k];sum+=dart.score;running-=dart.score;
+  if(running===0){if(cfg.out==='straight'||dart.double||dart.bull){checkout=true;used=k+1;}else bust=true;break;}
+  if(running<0||running===1){bust=true;break;}
+ }
+ if(!checkout&&!bust&&throws.length===3&&running>0){}
+ S.botThinking=false;botTurnToken++;
+ const addVisit=(points,darts,finish=false)=>{
+  S.legStats[i].points+=points;S.gameStats[i].points+=points;S.seriesStats[i].points+=points;
+  S.legStats[i].darts+=darts;S.gameStats[i].darts+=darts;S.seriesStats[i].darts+=darts;
+  S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;
+  S.legStats[i].high=Math.max(S.legStats[i].high,points);S.gameStats[i].high=Math.max(S.gameStats[i].high,points);S.seriesStats[i].high=Math.max(S.seriesStats[i].high,points);
+  recordVisit(i,points);
+  if(finish){S.bestFinish[i]=Math.max(Number(S.bestFinish?.[i])||0,before);S.score[i]=0;}
+ };
+ if(bust){
+  recordVisit(i,'BUST');S.legStats[i].darts+=3;S.gameStats[i].darts+=3;S.seriesStats[i].darts+=3;
+  S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;
+  S.turn=0;render();$('entryDisplay').textContent='BUST';$('entryHint').textContent=`SMART: ${throws.map(x=>x.label).join(' · ')} · käik tühistati`;return;
+ }
+ if(checkout){addVisit(before,used,true);finishLeg(i,used);return;}
+ addVisit(sum,3,false);S.score[i]=before-sum;S.turn=0;render();$('entryDisplay').textContent=String(sum);$('entryHint').textContent=`SMART: ${throws.map(x=>x.label).join(' · ')} = ${sum}`;
+}
 function startSeries(){
  saveSetup();
  let n=+$('gamesTotal').value;if(!Number.isInteger(n)||n<1||n>20){alert('Vali 1–20 mängu.');return;}
  let names=[$('p1').value.trim()||'Mängija 1',$('p2').value.trim()||'Mängija 2'];
- S={names,total:n,gameNo:1,seriesWins:[0,0],results:[],legs:[0,0],score:[cfg.start,cfg.start],turn:0,legStats:[stat(),stat()],gameStats:[stat(),stat()],legHistory:[],visitHistory:[[],[]]};
- startGame();show('game');
+ S={names,total:n,seriesId:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,isBotGame:normName(names[1])==='smart',botThinking:false,gameNo:1,seriesWins:[0,0],results:[],legs:[0,0],score:[cfg.start,cfg.start],turn:0,setStarter:0,legStarter:0,legStats:[stat(),stat()],gameStats:[stat(),stat()],seriesStats:[stat(),stat()],legHistory:[],visitHistory:[[],[]],visitScores:[[],[]],bestFinish:[0,0]};
+ startGame();show('game');maybeStartBotTurn();
 }
-function startGame(){S.legs=[0,0];S.score=[cfg.start,cfg.start];S.turn=0;S.legStats=[stat(),stat()];S.gameStats=[stat(),stat()];S.legHistory=[];entry='';undoStack=[];undoState=null;render();}
+function startGame(){S.legs=[0,0];S.score=[cfg.start,cfg.start];S.turn=S.setStarter??0;S.legStarter=S.turn;S.legStats=[stat(),stat()];S.gameStats=[stat(),stat()];S.legHistory=[];S.visitHistory=[[],[]];S.visitScores=[[],[]];S.bestFinish=[0,0];entry='';undoStack=[];redoStack=[];undoState=null;render();}
 function gameLegDetails(playerIndex){
  return (S.legHistory||[]).map(leg=>leg.winner===playerIndex?'1':'0').join(' · ') || '–';
 }
+function fitGameToScreen(){
+ const app=document.querySelector('.app');
+ if(!app||!document.body.classList.contains('playing'))return;
+ if(!window.matchMedia('(max-width: 700px)').matches){app.style.removeProperty('--auto-fit-zoom');return;}
+ // Mõõda alati algset, skaleerimata kujundust. Sisestatud punktide arv ei muuda skaalat.
+ app.style.setProperty('--auto-fit-zoom','1','important');
+ const naturalHeight=app.scrollHeight;
+ const viewportHeight=(window.visualViewport&&window.visualViewport.height)||window.innerHeight;
+ const availableHeight=Math.max(260,viewportHeight-12);
+ const scale=Math.min(1,availableHeight/Math.max(1,naturalHeight));
+ app.style.setProperty('--auto-fit-zoom',String(Math.max(0.55,scale)),'important');
+}
+let wakeLock=null;
+async function updateWakeLock(){
+ const shouldStayAwake=document.body.classList.contains('playing')&&document.visibilityState==='visible';
+ if(!shouldStayAwake){if(wakeLock){try{await wakeLock.release();}catch(e){}wakeLock=null;}return;}
+ if(!('wakeLock' in navigator)||wakeLock)return;
+ try{wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null;});}catch(e){console.info('Ekraani ärkvelhoidmine pole selles brauseris saadaval:',e);}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')updateWakeLock();else updateWakeLock();});
+window.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
+window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120));
+if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 41`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 79`;
  $('players').innerHTML='';
- S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta" style="font-size:14px!important;line-height:1.3!important;text-align:center;white-space:normal;transform:none!important">LEGI AVG <b style="font-size:14px!important">${avg(S.legStats[i])}</b><br>MÄNGU AVG <b style="font-size:14px!important">${avg(S.gameStats[i])}</b><br>LEGI NOOLED <b style="font-size:14px!important">${S.legStats[i].darts}</b><br><b style="font-size:16px!important">${S.legs[i]}</b></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);});
- $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=entry?'Punktisumma':'Sisesta kolme noole summa';
- $('legName1').textContent=S.names[0];$('legName2').textContent=S.names[1];$('legScore1').textContent=S.seriesWins[0];$('legScore2').textContent=S.seriesWins[1];
- $('undoBtn').disabled=!undoState;$('undoBtn').style.opacity=undoState?1:.45;
+ S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta player-stats"><div class="stat-row"><span>LEGI AVG</span><span class="stat-value">${avg(S.legStats[i])}</span></div><div class="stat-row"><span>MÄNGU AVG</span><span class="stat-value">${avg(S.seriesStats?.[i]||stat())}</span></div><div class="stat-row"><span>LEGI NOOLED</span><span class="stat-value">${S.legStats[i].darts}</span></div><div class="setleg-inline"><span class="stat-label">SETS</span><span class="stat-value">${S.seriesWins[i]}</span><span class="stat-label">LEGS</span><span class="stat-value">${S.legs[i]}</span></div></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit(true);});});
+ $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=S.botThinking?'SMART BOT viskab…':(entry?'OK = punktid · mängija kast = soovitud jääk · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta punktid või soovitud jääk');
+ const botLocked=!!S.botThinking||(isSmartBot()&&S.turn===1);$('keypad').querySelectorAll('button').forEach(b=>b.disabled=botLocked);$('undoBtn').disabled=botLocked||!undoStack.length;$('redoBtn').disabled=botLocked||!redoStack.length;
+ $('undoBtn').style.opacity=undoStack.length?1:.45;
+ $('redoBtn').style.opacity=redoStack.length?1:.45;
+ $('closeGameBtn').classList.toggle('hidden',!document.body.classList.contains('playing'));
 }
 function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function keypad(){let vals=['1','2','3','4','5','6','7','8','9','⌫','0','OK'];$('keypad').innerHTML='';vals.forEach(v=>{let b=document.createElement('button');b.className='key'+(v==='OK'?' ok':v==='⌫'?' del':'');b.textContent=v;b.onclick=()=>{if(v==='OK')submitVisit();else if(v==='⌫')entry=entry.slice(0,-1);else if(entry.length<3)entry+=v;render();};$('keypad').appendChild(b);});}
+function keypad(){
+ let vals=['1','2','3','4','5','6','7','8','9','⌫','0','OK'];
+ $('keypad').innerHTML='';
+ vals.forEach(v=>{
+  let b=document.createElement('button');
+  b.className='key'+(v==='OK'?' ok':v==='⌫'?' del':'');
+  b.textContent=v;
+  b.setAttribute('draggable','false');
+  b.setAttribute('aria-label',v==='OK'?'Kinnita':v==='⌫'?'Kustuta viimane number':v);
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+  b.addEventListener('selectstart',e=>e.preventDefault());
+  let timer=null,held=false,pointerActive=false;
+  const activate=()=>{
+   if(S?.botThinking||(isSmartBot()&&S.turn===1))return;
+   if(v==='OK')submitVisit();
+   else if(v==='⌫'){
+    if(entry.length)redoStack=[];
+    entry=entry.slice(0,-1);
+   }else if(entry.length<3){
+    redoStack=[];
+    entry+=v;
+   }
+   render();
+  };
+  // Pointer events handle the physical tap once; click is reserved for keyboard/accessibility.
+  b.addEventListener('pointerdown',e=>{
+   if(S?.botThinking||(isSmartBot()&&S.turn===1))return;
+   if(e.pointerType==='mouse'&&e.button!==0)return;
+   e.preventDefault();
+   pointerActive=true;
+   held=false;
+   try{b.setPointerCapture(e.pointerId);}catch(_){ }
+   if(['1','2','3'].includes(v)){
+    timer=setTimeout(()=>{
+     timer=null;
+     held=true;
+     finishByDarts(Number(v));
+    },550);
+   }
+  });
+  b.addEventListener('pointerup',e=>{
+   if(!pointerActive)return;
+   e.preventDefault();
+   pointerActive=false;
+   if(timer){clearTimeout(timer);timer=null;}
+   if(!held)activate();
+   held=false;
+  });
+  b.addEventListener('pointercancel',()=>{
+   pointerActive=false;
+   if(timer){clearTimeout(timer);timer=null;}
+   held=false;
+  });
+  b.addEventListener('click',e=>{
+   // Pointer-generated clicks are ignored to avoid duplicate or delayed input.
+   if(e.detail!==0)return;
+   activate();
+  });
+  $('keypad').appendChild(b);
+ });
+}
+
 function snapshot(){return JSON.parse(JSON.stringify({state:S,persistent}));}
-function recordVisit(i,value){if(!S.visitHistory)S.visitHistory=[[],[]];S.visitHistory[i].push(value);if(S.visitHistory[i].length>5)S.visitHistory[i].shift();}
-function restore(){if(!undoStack.length)return;let previous=undoStack.pop();S=previous.state;persistent=previous.persistent;save();undoState=undoStack.length?undoStack[undoStack.length-1]:null;entry='';show('game');render();}
+function recordVisit(i,value){if(!S.visitHistory)S.visitHistory=[[],[]];S.visitHistory[i].push(value);if(S.visitHistory[i].length>5)S.visitHistory[i].shift();if(typeof value==='number'&&Number.isFinite(value)){if(!S.visitScores)S.visitScores=[[],[]];if(!S.visitScores[i])S.visitScores[i]=[];S.visitScores[i].push(value);}}
+function restore(){
+ if(S?.botThinking||!undoStack.length)return;
+ redoStack.push(snapshot());
+ let previous=undoStack.pop();
+ S=previous.state;persistent=previous.persistent;save();
+ undoState=undoStack.length?undoStack[undoStack.length-1]:null;
+ entry='';show('game');render();
+}
+function redo(){
+ if(S?.botThinking||!redoStack.length)return;
+ undoStack.push(snapshot());
+ let next=redoStack.pop();
+ S=next.state;persistent=next.persistent;save();
+ undoState=undoStack.length?undoStack[undoStack.length-1]:null;
+ entry='';show('game');render();
+}
 function addDarts(i,n){S.legStats[i].darts+=n;S.gameStats[i].darts+=n;}
-function submitVisit(){
- let v=entry===''?0:+entry;if(!Number.isInteger(v)||v<0||v>180){alert('Sisesta 0–180.');return;}
- let i=S.turn,remaining=S.score[i]-v;undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
- if(remaining<0||remaining===1||(remaining===0&&cfg.out==='double')){recordVisit(i,'BUST');addDarts(i,3);S.legStats[i].visits++;S.gameStats[i].visits++;S.turn=1-i;entry='';render();alert('BUST – skoor jääb samaks.');return;}
+function submitVisit(asRemaining=false){
+ if(S?.botThinking||(isSmartBot()&&S.turn===1))return;
+ let input=entry===''?0:+entry;
+ if(!Number.isInteger(input)||input<0||input>180){alert('Sisesta 0–180.');return;}
+ let i=S.turn;
+ if(asRemaining&&input>S.score[i]){alert(`Jääk ei saa olla suurem kui praegune skoor (${S.score[i]}).`);return;}
+ let v=asRemaining?S.score[i]-input:input;
+ if(v>180){alert('Ühe käiguga ei saa sisestada üle 180 punkti.');return;}
+ let remaining=S.score[i]-v;redoStack=[];undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
+ if(remaining<0||remaining===1||(remaining===0&&cfg.out==='double')){recordVisit(i,'BUST');addDarts(i,3);S.seriesStats[i].darts+=3;S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;S.turn=1-i;entry='';render();maybeStartBotTurn();alert('BUST – skoor jääb samaks.');return;}
  if(remaining===0){undoStack.pop();undoState=undoStack.length?undoStack[undoStack.length-1]:null;entry='';alert('Double Out: lõpeta pika vajutusega 1, 2 või 3.');return;}
- recordVisit(i,v);S.score[i]=remaining;S.legStats[i].points+=v;S.gameStats[i].points+=v;S.legStats[i].darts+=3;S.gameStats[i].darts+=3;S.legStats[i].visits++;S.gameStats[i].visits++;S.legStats[i].high=Math.max(S.legStats[i].high,v);S.gameStats[i].high=Math.max(S.gameStats[i].high,v);S.turn=1-i;entry='';render();
+ recordVisit(i,v);S.score[i]=remaining;S.legStats[i].points+=v;S.gameStats[i].points+=v;S.seriesStats[i].points+=v;S.legStats[i].darts+=3;S.gameStats[i].darts+=3;S.seriesStats[i].darts+=3;S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;S.legStats[i].high=Math.max(S.legStats[i].high,v);S.gameStats[i].high=Math.max(S.gameStats[i].high,v);S.seriesStats[i].high=Math.max(S.seriesStats[i].high,v);S.turn=1-i;entry='';render();maybeStartBotTurn();
 }
 function canCheckout(score,darts){
- if(cfg.out==='straight')return score>=0&&score<=60*darts;
- // Search legal dart scores; final dart must be a double (2..40, bull 50).
- let finals=[];for(let n=1;n<=20;n++)finals.push(n*2);finals.push(50);
- if(darts===1)return finals.includes(score);
- for(let a=0;a<=60;a++){for(let b=0;b<=60;b++){if(finals.includes(score-a-b))return true;}}
+ if(!Number.isInteger(score)||score<=0||!Number.isInteger(darts)||darts<1||darts>3)return false;
+ // Kõik ühe noolega tegelikult saavutatavad punktisummad:
+ // mööda, single, double, triple, outer bull ja bullseye.
+ const dartScores=new Set([0,25,50]);
+ for(let n=1;n<=20;n++){dartScores.add(n);dartScores.add(2*n);dartScores.add(3*n);}
+ // Double Out: viimane nool peab tabama duublit või bullseye'd.
+ const finalScores=cfg.out==='straight'
+   ? dartScores
+   : new Set([...Array.from({length:20},(_,i)=>(i+1)*2),50]);
+ if(darts===1)return finalScores.has(score);
+ for(const a of dartScores){
+  if(darts===2){if(finalScores.has(score-a))return true;continue;}
+  for(const b of dartScores){if(finalScores.has(score-a-b))return true;}
+ }
  return false;
 }
 function finishByDarts(n){
+ if(S?.botThinking||(isSmartBot()&&S.turn===1))return;
  let score=S.score[S.turn],i=S.turn;
  if(!canCheckout(score,n)){alert(`Skoori ${score} ei saa selle reegli järgi ${n} noolega lõpetada.`);return;}
- undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
- S.legStats[i].points+=score;S.gameStats[i].points+=score;
- S.legStats[i].darts+=n;S.gameStats[i].darts+=n;
- S.legStats[i].visits++;S.gameStats[i].visits++;
+ redoStack=[];undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
+ S.legStats[i].points+=score;S.gameStats[i].points+=score;S.seriesStats[i].points+=score;
+ S.legStats[i].darts+=n;S.gameStats[i].darts+=n;S.seriesStats[i].darts+=n;
+ S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;
  recordVisit(i,score);
- S.legStats[i].high=Math.max(S.legStats[i].high,score);S.gameStats[i].high=Math.max(S.gameStats[i].high,score);
+ S.bestFinish[i]=Math.max(Number(S.bestFinish?.[i])||0,score);
+ S.legStats[i].high=Math.max(S.legStats[i].high,score);S.gameStats[i].high=Math.max(S.gameStats[i].high,score);S.seriesStats[i].high=Math.max(S.seriesStats[i].high,score);
  S.score[i]=0;
  finishLeg(i,n);
 }
 function finishLeg(winner,darts){
  S.legs[winner]++;S.legHistory.push({winner,stats:S.legStats.map(x=>({...x}))});
  if(S.legs[winner]>=cfg.legs){finishMatch(winner);return;}
- S.score=[cfg.start,cfg.start];S.legStats=[stat(),stat()];S.turn=1-winner;undoState=undoStack[undoStack.length-1]||null;render();
- alert(`${S.names[winner]} võitis legi!`);
+ S.score=[cfg.start,cfg.start];S.legStats=[stat(),stat()];S.visitHistory=[[],[]];S.legStarter=1-(S.legStarter??0);S.turn=S.legStarter;undoState=undoStack[undoStack.length-1]||null;render();maybeStartBotTurn();
 }
 function finishMatch(winner){
  S.seriesWins[winner]++;
- let result={gameNo:S.gameNo,names:[...S.names],winner,legs:[...S.legs],stats:S.gameStats.map(x=>({...x})),legHistory:S.legHistory.map(x=>({...x}))};
- S.results.push(result);persistent.unshift({date:new Date().toISOString(),...result});persistent=persistent.slice(0,200);save();
- $('winnerTitle').textContent=S.names[winner]+' VÕITIS MÄNGU!';
- $('matchSummary').innerHTML=S.names.map((n,i)=>`<div class="statsline"><span>${esc(n)}</span><strong>${S.legs[i]} legi · AVG ${avg(S.gameStats[i])} · ${S.gameStats[i].darts} noolt</strong></div>`).join('')+`<p class="muted small">Mäng ${S.gameNo} / ${S.total}</p>`;
- $('nextGameBtn').textContent=S.gameNo<S.total?'JÄRGMINE MÄNG':'VAATA SEERIA TULEMUST';
- show('matchEnd');
+ let result={seriesId:S.seriesId,total:S.total,isBotGame:!!S.isBotGame,gameNo:S.gameNo,names:[...S.names],winner,legs:[...S.legs],stats:S.gameStats.map(x=>({...x})),legHistory:S.legHistory.map(x=>({...x})),visitScores:(S.visitScores||[[],[]]).map(x=>[...(x||[])]),bestFinish:[...(S.bestFinish||[0,0])]};
+ S.results.push(result);
+ // Kui seerias on veel sete, alustame järgmist kohe ilma vahepealse kinnituse või popupita.
+ if(S.gameNo<S.total){
+  S.gameNo++;
+  S.setStarter=1-(S.setStarter??0);
+  startGame();
+  show('game');
+  maybeStartBotTurn();
+  return;
+ }
+ finishSeries();
 }
 function finishSeries(){
- $('seriesSummary').innerHTML=`<h2>${esc(S.names[0])} ${S.seriesWins[0]} : ${S.seriesWins[1]} ${esc(S.names[1])}</h2>`+S.results.map(r=>`<div class="historyitem">Mäng ${r.gameNo}: ${esc(r.names[r.winner])} võitis · ${r.legs.join(' : ')}</div>`).join('');
+ // Ajalukku salvestame ainult täielikult mängitud seeria.
+ // Kui valiti näiteks 3 mängu, peavad kõik 3 olema lõpetatud.
+ const complete=S.results.length===S.total&&S.results.every((r,i)=>r.gameNo===i+1);
+ if(complete&&!S.historySaved){
+  const completedAt=new Date().toISOString();
+  S.results.forEach(result=>persistent.unshift({date:completedAt,...result}));
+  persistent=persistent.slice(0,200);
+  S.historySaved=true;
+  save();
+  uploadCompletedSeries(persistent.filter(record=>record.seriesId===S.seriesId));
+  $('historyPreview').textContent=`${new Set(persistent.map((h,i)=>h.seriesId||`legacy-${i}`)).size} salvestatud seeriat.`;
+ }
+ $('seriesSummary').innerHTML=`<h2>${esc(S.names[0])} ${S.seriesWins[0]} : ${S.seriesWins[1]} ${esc(S.names[1])}</h2>`+S.results.map(r=>`<div class="historyitem">Mäng ${r.gameNo}: ${esc(r.names[r.winner])} võitis · ${r.legs.join(' : ')}</div>`).join('')+(complete?'':'<p class="muted small">Seeria jäi pooleli ja seda ajalukku ei salvestatud.</p>');
  show('seriesEnd');
 }
 function nextGame(){if(S.gameNo>=S.total){finishSeries();return;}S.gameNo++;startGame();show('game');}
-// Lõpetamise noolenupud töötavad ühe tavalise vajutusega.
-document.querySelectorAll('[data-finish]').forEach(b=>{
- let n=+b.dataset.finish;
- b.addEventListener('click',()=>finishByDarts(n));
-});
 $('startBtn').onclick=startSeries;
-$('undoBtn').onclick=restore;\n$('undoMatchBtn').onclick=restore;
-$('quitBtn').onclick=()=>{if(confirm('Katkestan käimasoleva mängu? Seda mängu ei salvestata.'))show('setup');};
+$('undoBtn').onclick=restore;
+$('redoBtn').onclick=redo;
+$('undoMatchBtn').onclick=restore;
+$('closeGameBtn').onclick=()=>{if(confirm('Katkestan käimasoleva mängu? Seda mängu ei salvestata.')){botTurnToken++;if(S)S.botThinking=false;show('setup');}};
 $('nextGameBtn').onclick=nextGame;
 $('endSeriesBtn').onclick=finishSeries;
 $('newSeriesBtn').onclick=()=>show('setup');
-$('viewHistory').onclick=()=>{ $('historyList').innerHTML=persistent.length?persistent.map(h=>`<div class="historyitem"><b>${esc(h.names[h.winner])}</b> võitis · ${esc(h.names[0])} ${h.legs[0]}:${h.legs[1]} ${esc(h.names[1])}<div class="muted small" style="margin-top:5px">${new Date(h.date).toLocaleString('et-EE')}</div><div class="history-avg-grid"><div class="history-avg-player"><div class="history-avg-name">${esc(h.names[0])}</div><div class="history-avg-label">MÄNGU AVG</div><div class="history-avg-value">${avg(h.stats[0])}</div></div><div class="history-avg-player"><div class="history-avg-name">${esc(h.names[1])}</div><div class="history-avg-label">MÄNGU AVG</div><div class="history-avg-value">${avg(h.stats[1])}</div></div></div></div>`).join(''):'Ajaloos pole veel mänge.';show('historyScreen');};
+
+// Supabase'i ühine ajalugu. Publishable key ei ole salajane; omaniku kood jääb ainult omaniku telefoni.
+const SUPABASE_URL='https://dcuwoobocshgsnayessi.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_Y_YKdkhFBj8HSO8CvGX7IQ_wgYqgDHQ';
+const HISTORY_FUNCTION_URL=SUPABASE_URL+'/functions/v1/darts-history';
+const SHARED_CODE_KEY='dartsSharedCode';
+const OWNER_CODE_KEY='dartsOwnerCode';
+let cloudRows=[];
+function cloudHeaders(owner=false){
+ const h={'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY,'x-darts-code':localStorage.getItem(SHARED_CODE_KEY)||''};
+ if(owner)h['x-darts-owner-code']=localStorage.getItem(OWNER_CODE_KEY)||'';
+ return h;
+}
+async function cloudRequest(body,owner=false){
+ const response=await fetch(HISTORY_FUNCTION_URL,{method:'POST',headers:cloudHeaders(owner),body:JSON.stringify(body)});
+ let data={};try{data=await response.json();}catch(e){}
+ if(!response.ok)throw new Error(data.error||('Supabase HTTP '+response.status));
+ if(data.error)throw new Error(data.error);
+ return data;
+}
+function ownerEnabled(){return !!localStorage.getItem(OWNER_CODE_KEY);}
+$('ownerModeBtn').onclick=()=>{
+ const current=localStorage.getItem(OWNER_CODE_KEY)||'';
+ const value=prompt(current?'Sisesta omaniku kood uuesti või jäta tühjaks õiguse eemaldamiseks:':'Sisesta omaniku kustutamiskood. See salvestatakse ainult sellesse telefoni:');
+ if(value===null)return;
+ if(value.trim())localStorage.setItem(OWNER_CODE_KEY,value.trim());else localStorage.removeItem(OWNER_CODE_KEY);
+ renderHistory();
+};
+async function loadCloudHistory(){
+ const status=$('cloudStatus');status.textContent='Laen ühist ajalugu…';
+ try{
+  const data=await cloudRequest({action:'list'});
+  cloudRows=Array.isArray(data.matches)?data.matches:[];
+  const remote=[];
+  cloudRows.forEach(row=>{
+   const payload=row.match_data||{};
+   const records=Array.isArray(payload.records)?payload.records:(payload.series?payload.series:[payload]);
+   records.forEach(record=>{if(record&&record.names&&record.stats)remote.push({...record,cloudId:row.id,date:record.date||row.created_at||record.created_at});});
+  });
+  const known=new Set(persistent.map(x=>x.seriesId).filter(Boolean));
+  remote.forEach(record=>{if(!record.seriesId||!known.has(record.seriesId)){persistent.push(record);if(record.seriesId)known.add(record.seriesId);}});
+  persistent.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  save();
+  status.textContent=`Ühine ajalugu ühendatud · ${cloudRows.length} kirjet`;
+ }catch(error){status.textContent='Ühise ajaloo laadimine ebaõnnestus: '+error.message;}
+ renderHistory();
+}
+async function uploadCompletedSeries(records){
+ for(const record of records){
+  if(record.cloudSaved)continue;
+  try{
+   const saved=await cloudRequest({action:'add',player1:record.names?.[0]||'',player2:record.names?.[1]||'',winner:record.names?.[record.winner]||'',match_data:record,is_completed:true});
+   record.cloudSaved=true;record.cloudId=saved.match?.id||saved.id||record.cloudId;
+  }catch(error){console.error('Supabase salvestus ebaõnnestus:',error);$('historyPreview').textContent='Kohalikult salvestatud; ühisesse ajalukku saatmine ebaõnnestus.';}
+ }
+ save();
+}
+async function deleteCloudRows(ids){
+ for(const id of ids){await cloudRequest({action:'delete',id},true);}
+}
+
+function renderHistory(){
+ // Koonda ühe mänguseeria kõik lõpetatud mängud üheks ajalookirjeks.
+ const groups=new Map();
+ persistent.forEach((h,originalIndex)=>{
+  const key=h.seriesId?`series:${h.seriesId}`:`legacy:${originalIndex}`;
+  if(!groups.has(key))groups.set(key,{key,items:[],indices:[],names:[...(h.names||[])],wins:[0,0],legs:[0,0],stats:[stat(),stat()],detailLegs:[],date:h.date||'',isBotGame:!!h.isBotGame||normName(h.names?.[1])==='smart'});
+  const g=groups.get(key);g.items.push(h);g.indices.push(originalIndex);g.isBotGame=g.isBotGame||!!h.isBotGame||normName(h.names?.[1])==='smart';
+  if(new Date(h.date||0)>new Date(g.date||0))g.date=h.date;
+  (h.names||[]).forEach((name,i)=>{if(name)g.names[i]=name;});
+  if(Number.isInteger(h.winner))g.wins[h.winner]++;
+  (h.legs||[0,0]).forEach((v,i)=>{g.legs[i]+=Number(v)||0;});
+  (h.stats||[]).forEach((v,i)=>{if(!v)return;g.stats[i].points+=Number(v.points)||0;g.stats[i].darts+=Number(v.darts)||0;g.stats[i].high=Math.max(g.stats[i].high,Number(v.high)||0);g.stats[i].visits+=Number(v.visits)||0;});
+  (h.legHistory||[]).forEach((leg,legIndex)=>g.detailLegs.push({gameNo:Number(h.gameNo)||1,legNo:legIndex+1,winner:Number.isInteger(leg.winner)?leg.winner:null,stats:leg.stats||[]}));
+ });
+ const newestFirst=Array.from(groups.values()).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+ const bestByPlayer=new Map();
+ newestFirst.forEach(g=>{if(g.isBotGame)return;g.names.forEach((name,i)=>{
+  if(!name)return;
+  const value=Number(avg(g.stats[i]));
+  const current=bestByPlayer.get(name);
+  const wonLegs=g.detailLegs.filter(leg=>leg.winner===i).map(leg=>leg.stats[i]).filter(st=>st&&Number(st.darts)>0);
+  const minDarts=wonLegs.reduce((min,st)=>Math.min(min,Number(st.darts)),Infinity);
+  const bestLeg=wonLegs.reduce((best,st)=>{
+   const legAvg=Number(avg(st));
+   return !best||legAvg>best.value?{value:legAvg,display:avg(st)}:best;
+  },null);
+  const bestFinish=(g.items||[]).reduce((best,item)=>Math.max(best,Number(item.bestFinish?.[i])||0),0);
+  const scores=(g.items||[]).flatMap(item=>(item.visitScores?.[i]||[]).map(Number)).filter(Number.isFinite);
+  const visitCounts={};
+  scores.forEach(score=>{
+   let key=null;
+   if(score>=100&&score<=119)key='100+';
+   else if(score>=120&&score<=139)key='120+';
+   else if(score>=140&&score<=159)key='140+';
+   else if(score>=160&&score<=169)key='160+';
+   else if(Number.isInteger(score)&&score>=170&&score<=180)key=String(score);
+   if(key)visitCounts[key]=(visitCounts[key]||0)+1;
+  });
+  if(!current){
+   bestByPlayer.set(name,{value,display:avg(g.stats[i]),minDarts,bestLeg,bestFinish,visitCounts});
+  }else{
+   if(value>current.value){current.value=value;current.display=avg(g.stats[i]);}
+   if(minDarts<current.minDarts)current.minDarts=minDarts;
+   if(bestLeg&&(!current.bestLeg||bestLeg.value>current.bestLeg.value))current.bestLeg=bestLeg;
+   current.bestFinish=Math.max(current.bestFinish||0,bestFinish);
+   Object.entries(visitCounts).forEach(([key,count])=>current.visitCounts[key]=(current.visitCounts[key]||0)+count);
+  }
+ });});
+ const recordOrder=['100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
+ const bestHtml=bestByPlayer.size?`<section class="historyitem" style="margin-bottom:14px"><b>MÄNGIJATE PARIM MÄNGU AVG</b><div class="history-avg-grid" style="margin-top:10px">${Array.from(bestByPlayer.entries()).map(([name,best],playerIndex)=>{const rows=recordOrder.filter(key=>(best.visitCounts[key]||0)>0).map(key=>`<div class="history-record-stats-row"><span>${key}</span><strong>${best.visitCounts[key]}</strong></div>`).join('');return `<div class="history-avg-player history-record-card" role="button" tabindex="0" aria-expanded="false" data-toggle-record="${playerIndex}"><div class="history-avg-name">${esc(name)}</div><div class="history-best-row"><span>AVG</span><strong>${best.display}</strong></div><div class="history-best-row"><span>LEG</span><strong>${best.bestLeg?best.bestLeg.display:'–'}</strong></div><div class="history-best-row"><span>NOOLED</span><strong>${Number.isFinite(best.minDarts)?best.minDarts:'–'}</strong></div><div class="history-record-stats hidden" id="historyRecordStats${playerIndex}"><div class="history-record-stats-row"><span>PARIM LÕPP</span><strong>${best.bestFinish||'–'}</strong></div>${rows}</div></div>`;}).join('')}</div><div class="muted small" style="margin-top:7px">Vajuta mängija ruudule visketulemuste statistika avamiseks</div></section>`:'';
+ const gamesHtml=newestFirst.length?newestFirst.map((g,groupIndex)=>{
+  const count=g.items.length;const score=`${g.wins[0]} : ${g.wins[1]}`;
+  const outcome=g.wins[0]===g.wins[1]?'Seeria jäi viiki':`${esc(g.names[g.wins[0]>g.wins[1]?0:1])} võitis seeria`;
+  const indices=g.indices.join(',');
+  const orderedItems=[...g.items].sort((a,b)=>(Number(a.gameNo)||1)-(Number(b.gameNo)||1));
+  const allLegs=orderedItems.flatMap(item=>(item.legHistory||[]).map(leg=>({winner:leg.winner,stats:leg.stats||[]})));
+  const detailRows=allLegs.map((leg,legIndex)=>`<tr><td>Leg ${legIndex+1}</td>${[0,1].map(player=>{const st=leg.stats?.[player];const value=st&&Number(st.darts)>0?`${avg(st)} (${Number(st.darts)})`:'–';return `<td><span class="history-leg-cell">${value}${leg.winner===player?'<span class="history-leg-winner" title="Legi võitja" aria-label="Legi võitja"></span>':''}</span></td>`;}).join('')}</tr>`).join('');
+  const categories=['100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
+  const playerStats=[0,1].map(player=>{
+   const scores=orderedItems.flatMap(item=>(item.visitScores?.[player]||[]).map(Number)).filter(Number.isFinite);
+   const counts={};
+   scores.forEach(score=>{let key=null;if(score>=100&&score<=119)key='100+';else if(score>=120&&score<=139)key='120+';else if(score>=140&&score<=159)key='140+';else if(score>=160&&score<=169)key='160+';else if(Number.isInteger(score)&&score>=170&&score<=180)key=String(score);if(key)counts[key]=(counts[key]||0)+1;});
+   const rows=categories.filter(key=>(counts[key]||0)>0).map(key=>`<div class="history-record-stats-row"><span>${key}</span><strong>${counts[key]}</strong></div>`).join('');
+   const bestFinish=orderedItems.reduce((best,item)=>Math.max(best,Number(item.bestFinish?.[player])||0),0);
+   const bestRow=bestFinish?`<div class="history-record-stats-row"><span>PARIM LÕPP</span><strong>${bestFinish}</strong></div>`:'';
+   return `<div class="history-avg-player"><div class="history-avg-name">${esc(g.names[player]||`Mängija ${player+1}`)}</div><div class="history-record-stats">${bestRow}${rows||(!bestRow?'<div class="muted small">Statistika puudub</div>':'')}</div></div>`;
+  });
+  const statsHtml=playerStats.some((_,player)=>orderedItems.some(item=>Number(item.bestFinish?.[player])>0||(item.visitScores?.[player]||[]).some(score=>Number(score)>=100)))?`<div class="history-avg-grid" style="margin-top:10px">${playerStats.join('')}</div>`:'';
+  const detailContent=`<section class="history-game-detail"><table><thead><tr><th>Leg</th><th>${esc(g.names[0])}</th><th>${esc(g.names[1])}</th></tr></thead><tbody>${detailRows||'<tr><td colspan="3">Legide detailid puuduvad</td></tr>'}</tbody></table><div class="muted small" style="margin-top:10px;margin-bottom:4px">KOGU SEERIA VISKETULEMUSTE STATISTIKA</div>${statsHtml}</section>`;
+  const detailHtml=`<div class="history-detail hidden" id="historyDetail${groupIndex}">${detailContent}</div>`;
+  return `<div class="historyitem"><div class="history-series-card" role="button" tabindex="0" aria-expanded="false" data-toggle-detail="${groupIndex}"><b>${outcome}</b> · ${esc(g.names[0])} ${score} ${esc(g.names[1])}<div class="muted small" style="margin-top:5px">${count} setti · ${new Date(g.date).toLocaleString('et-EE')}</div><div class="muted small" style="margin-top:3px">Setid kokku: ${g.items.length} · Legid: ${g.legs[0]} : ${g.legs[1]}</div><div class="history-avg-grid"><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[0])}</div><div class="history-avg-value">${avg(g.stats[0])}</div></div><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[1])}</div><div class="history-avg-value">${avg(g.stats[1])}</div></div></div><div class="muted small" style="margin-top:8px">Vajuta detailide avamiseks</div></div>${detailHtml}${ownerEnabled()?`<button class="secondary danger" data-delete-series="${indices}" style="width:100%;margin-top:10px">KUSTUTA SEERIA</button>`:`<div class="muted small" style="margin-top:8px;text-align:center">Kustutamine ainult omaniku telefonis</div>`}</div>`;
+ }).join(''):'Ajaloos pole veel mänge.';
+ $('historyList').innerHTML=bestHtml+gamesHtml;
+ $('historyList').querySelectorAll('[data-toggle-record]').forEach(card=>{
+  const toggle=()=>{const detail=$(`historyRecordStats${card.dataset.toggleRecord}`);if(!detail||!detail.innerHTML.trim())return;const opening=detail.classList.contains('hidden');detail.classList.toggle('hidden');card.setAttribute('aria-expanded',String(opening));};
+  card.addEventListener('click',toggle);card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();toggle();}});
+ });
+ $('historyList').querySelectorAll('[data-toggle-detail]').forEach(card=>{
+  const toggle=()=>{const detail=$(`historyDetail${card.dataset.toggleDetail}`);const opening=detail.classList.contains('hidden');detail.classList.toggle('hidden');card.setAttribute('aria-expanded',String(opening));};
+  card.addEventListener('click',toggle);card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();toggle();}});
+ });
+ $('historyList').querySelectorAll('[data-delete-series]').forEach(button=>button.addEventListener('click',async()=>{
+  const indices=button.dataset.deleteSeries.split(',').map(Number).filter(Number.isInteger);
+  if(!indices.length)return;
+  if(!confirm('Kas kustutan kogu selle mänguseeria ajaloo?'))return;
+  const selected=indices.map(index=>persistent[index]).filter(Boolean);
+  const cloudIds=selected.map(item=>item.cloudId).filter(Boolean);
+  if(cloudIds.length){try{await deleteCloudRows(cloudIds);}catch(error){alert('Ühisest ajaloost kustutamine ebaõnnestus: '+error.message);return;}}
+  indices.sort((a,b)=>b-a).forEach(index=>{if(index>=0&&index<persistent.length)persistent.splice(index,1);});
+  save();renderHistory();$('historyPreview').textContent=persistent.length?`${new Set(persistent.map((h,i)=>h.seriesId||`legacy-${i}`)).size} salvestatud seeriat.`:'Mänge pole veel salvestatud.';
+ }));
+}
+$('viewHistory').onclick=()=>{show('historyScreen');window.scrollTo(0,0);if(!localStorage.getItem(SHARED_CODE_KEY)){const code=prompt('Sisesta ühine mängukood (DARTS_SHARED_CODE):');if(code&&code.trim())localStorage.setItem(SHARED_CODE_KEY,code.trim());}loadCloudHistory();};
 $('backSetup').onclick=()=>show('setup');
 keypad();
 $('historyPreview').textContent=persistent.length?`${persistent.length} salvestatud mängu.`:'Mänge pole veel salvestatud.';
+
+// v72: block touch-driven page scrolling only during an active game.
+// Do not cancel touchstart/end: keypad taps and long-press checkout must still work.
+document.addEventListener('touchmove',function(event){
+ if(document.body.classList.contains('playing')&&event.cancelable)event.preventDefault();
+},{passive:false});
 </script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}</script></body></html>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(err=>console.warn("PWA:",err)));}</script></body></html>
