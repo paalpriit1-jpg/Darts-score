@@ -1,1 +1,1 @@
-# Darts-score
+Darts Score v41. See versioon põhineb viimasel töötaval v39-l. v40 ajaloo kustutamise muudatust ei sisalda. Asenda GitHubis olemasolev index.html selle failiga.
