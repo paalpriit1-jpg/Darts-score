@@ -596,6 +596,7 @@ document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navi
 const $=id=>document.getElementById(id);
 let cfg={legs:3,start:501,out:'double'};
 let S=null, entry='', undoState=null, undoStack=[], redoStack=[], holdTimer=null, holdFired=false;
+let botTurnToken=0;
 let persistent=[];
 try{persistent=JSON.parse(localStorage.getItem('dartsHistory')||'[]');if(!Array.isArray(persistent))persistent=[];}catch(e){persistent=[];}
 let savedSetup={};
@@ -622,12 +623,144 @@ function setupChoices(){
 setupChoices();
 function stat(){return {points:0,darts:0,high:0,visits:0};}
 function avg(x){return x.darts?(x.points/x.darts*3).toFixed(2):'0.00';}
+function normName(name){return String(name||'').trim().toLocaleLowerCase('et-EE');}
+function isSmartBot(){return !!(S&&S.isBotGame&&normName(S.names?.[1])==='smart');}
+function botDelay(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+function clamp(value,min,max){return Math.max(min,Math.min(max,value));}
+function recentHumanLegAverage(){
+ const legs=[];
+ const addLegs=(history)=>{(history||[]).slice().reverse().forEach(leg=>{const st=leg?.stats?.[0];if(st&&Number(st.darts)>0)legs.push(Number(avg(st)));});};
+ const old=[...persistent].filter(h=>normName(h.names?.[1])!=='smart'&&!h.isBotGame).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+ old.forEach(h=>addLegs(h.legHistory));
+ // Käimasoleva seeria lõpetatud setid ja leg'id lisatakse kõige värskemana.
+ (S?.results||[]).slice().reverse().forEach(r=>addLegs(r.legHistory));
+ addLegs(S?.legHistory);
+ const recent=legs.slice(0,10);
+ if(!recent.length)return 40;
+ return clamp(recent.reduce((a,b)=>a+b,0)/recent.length,25,85);
+}
+const DART_SECTORS=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+function aimForScore(score){
+ if(score===50)return {kind:'bull',number:25,label:'BULL'};
+ if(score===25)return {kind:'outerBull',number:25,label:'25'};
+ if(score>=3&&score%3===0&&score/3<=20)return {kind:'triple',number:score/3,label:`T${score/3}`};
+ if(score>=2&&score%2===0&&score/2<=20)return {kind:'double',number:score/2,label:`D${score/2}`};
+ if(score>=1&&score<=20)return {kind:'single',number:score,label:`${score}`};
+ return {kind:'triple',number:20,label:'T20'};
+}
+function checkoutPlan(score,dartsLeft){
+ const doubles=cfg.out==='double'
+  ?[...Array.from({length:20},(_,i)=>({score:(i+1)*2,aim:{kind:'double',number:i+1,label:`D${i+1}`}})),{score:50,aim:{kind:'bull',number:25,label:'BULL'}}]
+  :[
+   ...Array.from({length:20},(_,i)=>({score:i+1,aim:{kind:'single',number:i+1,label:`${i+1}`}})),
+   ...Array.from({length:20},(_,i)=>({score:(i+1)*2,aim:{kind:'double',number:i+1,label:`D${i+1}`}})),
+   ...Array.from({length:20},(_,i)=>({score:(i+1)*3,aim:{kind:'triple',number:i+1,label:`T${i+1}`}})),
+   {score:25,aim:{kind:'outerBull',number:25,label:'25'}},{score:50,aim:{kind:'bull',number:25,label:'BULL'}}
+  ];
+ const firsts=[
+  ...Array.from({length:20},(_,i)=>({score:(20-i)*3,aim:{kind:'triple',number:20-i,label:`T${20-i}`}})),
+  ...Array.from({length:20},(_,i)=>({score:(20-i)*2,aim:{kind:'double',number:20-i,label:`D${20-i}`}})),
+  ...Array.from({length:20},(_,i)=>({score:20-i,aim:{kind:'single',number:20-i,label:`${20-i}`}})),
+  {score:50,aim:{kind:'bull',number:25,label:'BULL'}},{score:25,aim:{kind:'outerBull',number:25,label:'25'}}
+ ];
+ // Kui saab lõpetada ühe noolega, ära raiska nooli kolme noole kombinatsiooni otsimisele.
+ const direct=doubles.find(x=>x.score===score);
+ if(direct)return direct.aim;
+ if(dartsLeft===1)return null;
+ if(dartsLeft>=2){for(const a of firsts){const last=doubles.find(x=>x.score===score-a.score);if(last)return a.aim;}}
+ if(dartsLeft>=3){for(const a of firsts){for(const b of firsts){const last=doubles.find(x=>x.score===score-a.score-b.score);if(last)return a.aim;}}}
+ return null;
+}
+function weightedPick(options){let total=options.reduce((n,x)=>n+x[1],0),r=Math.random()*total;for(const [value,weight] of options){r-=weight;if(r<=0)return value;}return options[options.length-1][0];}
+function simulateBotDart(aim,skill){
+ const skill01=clamp((skill-25)/60,0,1);
+ if(aim.kind==='bull'){
+  const pBull=.12+.30*skill01,p25=.28,pMiss=1-pBull-p25;
+  const score=weightedPick([[50,pBull],[25,p25],[0,pMiss]]);
+  return {score,label:score===50?'BULL':String(score),double:score===50,bull:score===50};
+ }
+ if(aim.kind==='outerBull'){
+  const score=weightedPick([[25,.48+.18*skill01],[50,.04+.08*skill01],[0,.48-.26*skill01]]);
+  return {score,label:score===50?'BULL':String(score),double:score===50,bull:score===50};
+ }
+ const n=aim.number;
+ if(aim.kind==='triple'){
+  const pTriple=clamp((skill-25)/180,.02,.34);
+  const pSingle=clamp(.32+(skill-40)*.0015,.25,.42);
+  const pAdjacent=clamp(.35-(skill-25)*.004,.13,.35);
+  const sectors=DART_SECTORS,idx=sectors.indexOf(n),left=sectors[(idx+sectors.length-1)%sectors.length],right=sectors[(idx+1)%sectors.length];
+  const score=weightedPick([[3*n,pTriple],[n,pSingle],[left,pAdjacent/2],[right,pAdjacent/2],[0,Math.max(.01,1-pTriple-pSingle-pAdjacent)]]);
+  return {score,label:score===3*n?`T${n}`:score===n?String(n):String(score),double:false,bull:false};
+ }
+ if(aim.kind==='double'){
+  const pDouble=.25+.30*skill01,pSingle=.25,pTriple=.03+.08*skill01,pAdj=.15;
+  const sectors=DART_SECTORS,idx=sectors.indexOf(n),left=sectors[(idx+sectors.length-1)%sectors.length],right=sectors[(idx+1)%sectors.length];
+  const score=weightedPick([[2*n,pDouble],[n,pSingle],[3*n,pTriple],[left,pAdj/2],[right,pAdj/2],[0,Math.max(.01,1-pDouble-pSingle-pTriple-pAdj)]]);
+  return {score,label:score===2*n?`D${n}`:score===3*n?`T${n}`:String(score),double:score===2*n,bull:false};
+ }
+ const sectors=DART_SECTORS,idx=sectors.indexOf(n),left=sectors[(idx+sectors.length-1)%sectors.length],right=sectors[(idx+1)%sectors.length];
+ const score=weightedPick([[n,.5],[2*n,.12],[3*n,.08],[left,.075],[right,.075],[0,.15]]);
+ return {score,label:score===n?String(n):score===2*n?`D${n}`:score===3*n?`T${n}`:String(score),double:score===2*n,bull:false};
+}
+function maybeStartBotTurn(){
+ if(!isSmartBot()||S.turn!==1||S.botThinking||document.getElementById('game').classList.contains('hidden'))return;
+ const token=++botTurnToken;
+ setTimeout(()=>{if(token===botTurnToken)runBotTurn(token);},250);
+}
+async function runBotTurn(token){
+ if(token!==botTurnToken||!isSmartBot()||S.turn!==1||S.botThinking)return;
+ S.botThinking=true;entry='';render();
+ const skill=recentHumanLegAverage(),throws=[];let simulatedRemaining=S.score[1];
+ $('entryHint').textContent='SMART mõtleb…';
+ for(let dartNo=0;dartNo<3;dartNo++){
+  await botDelay(360);
+  if(token!==botTurnToken||!S||!isSmartBot()||S.turn!==1)return;
+  const remaining=simulatedRemaining;
+  let aim=remaining<=170?checkoutPlan(remaining,3-dartNo):null;
+  if(!aim)aim={kind:'triple',number:20,label:'T20'};
+  const result=simulateBotDart(aim,skill);
+  throws.push(result);
+  $('entryDisplay').textContent=throws.map(x=>x.label).join(' · ');
+  $('entryHint').textContent=`SMART · sihttase AVG ${skill.toFixed(1)} · nool ${dartNo+1}/3`;
+  simulatedRemaining-=result.score;
+  if(simulatedRemaining===0&&(cfg.out==='straight'||result.double||result.bull))break;
+  if(simulatedRemaining<0||simulatedRemaining===1||(simulatedRemaining===0&&cfg.out==='double'))break;
+ }
+ await botDelay(350);
+ if(token!==botTurnToken||!S||!isSmartBot()||S.turn!==1)return;
+ applyBotVisit(throws);
+}
+function applyBotVisit(throws){
+ const i=1,before=S.score[i];let running=before,sum=0,checkout=false,bust=false,used=throws.length;
+ for(let k=0;k<throws.length;k++){
+  const dart=throws[k];sum+=dart.score;running-=dart.score;
+  if(running===0){if(cfg.out==='straight'||dart.double||dart.bull){checkout=true;used=k+1;}else bust=true;break;}
+  if(running<0||running===1){bust=true;break;}
+ }
+ if(!checkout&&!bust&&throws.length===3&&running>0){}
+ S.botThinking=false;botTurnToken++;
+ const addVisit=(points,darts,finish=false)=>{
+  S.legStats[i].points+=points;S.gameStats[i].points+=points;S.seriesStats[i].points+=points;
+  S.legStats[i].darts+=darts;S.gameStats[i].darts+=darts;S.seriesStats[i].darts+=darts;
+  S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;
+  S.legStats[i].high=Math.max(S.legStats[i].high,points);S.gameStats[i].high=Math.max(S.gameStats[i].high,points);S.seriesStats[i].high=Math.max(S.seriesStats[i].high,points);
+  recordVisit(i,points);
+  if(finish){S.bestFinish[i]=Math.max(Number(S.bestFinish?.[i])||0,before);S.score[i]=0;}
+ };
+ if(bust){
+  recordVisit(i,'BUST');S.legStats[i].darts+=3;S.gameStats[i].darts+=3;S.seriesStats[i].darts+=3;
+  S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;
+  S.turn=0;render();$('entryDisplay').textContent='BUST';$('entryHint').textContent=`SMART: ${throws.map(x=>x.label).join(' · ')} · käik tühistati`;return;
+ }
+ if(checkout){addVisit(before,used,true);finishLeg(i,used);return;}
+ addVisit(sum,3,false);S.score[i]=before-sum;S.turn=0;render();$('entryDisplay').textContent=String(sum);$('entryHint').textContent=`SMART: ${throws.map(x=>x.label).join(' · ')} = ${sum}`;
+}
 function startSeries(){
  saveSetup();
  let n=+$('gamesTotal').value;if(!Number.isInteger(n)||n<1||n>20){alert('Vali 1–20 mängu.');return;}
  let names=[$('p1').value.trim()||'Mängija 1',$('p2').value.trim()||'Mängija 2'];
- S={names,total:n,seriesId:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,gameNo:1,seriesWins:[0,0],results:[],legs:[0,0],score:[cfg.start,cfg.start],turn:0,setStarter:0,legStarter:0,legStats:[stat(),stat()],gameStats:[stat(),stat()],seriesStats:[stat(),stat()],legHistory:[],visitHistory:[[],[]],visitScores:[[],[]],bestFinish:[0,0]};
- startGame();show('game');
+ S={names,total:n,seriesId:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,isBotGame:normName(names[1])==='smart',botThinking:false,gameNo:1,seriesWins:[0,0],results:[],legs:[0,0],score:[cfg.start,cfg.start],turn:0,setStarter:0,legStarter:0,legStats:[stat(),stat()],gameStats:[stat(),stat()],seriesStats:[stat(),stat()],legHistory:[],visitHistory:[[],[]],visitScores:[[],[]],bestFinish:[0,0]};
+ startGame();show('game');maybeStartBotTurn();
 }
 function startGame(){S.legs=[0,0];S.score=[cfg.start,cfg.start];S.turn=S.setStarter??0;S.legStarter=S.turn;S.legStats=[stat(),stat()];S.gameStats=[stat(),stat()];S.legHistory=[];S.visitHistory=[[],[]];S.visitScores=[[],[]];S.bestFinish=[0,0];entry='';undoStack=[];redoStack=[];undoState=null;render();}
 function gameLegDetails(playerIndex){
@@ -658,12 +791,13 @@ window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120))
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 74`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 78`;
  $('players').innerHTML='';
  S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta player-stats"><div class="stat-row"><span>LEGI AVG</span><span class="stat-value">${avg(S.legStats[i])}</span></div><div class="stat-row"><span>MÄNGU AVG</span><span class="stat-value">${avg(S.seriesStats?.[i]||stat())}</span></div><div class="stat-row"><span>LEGI NOOLED</span><span class="stat-value">${S.legStats[i].darts}</span></div><div class="setleg-inline"><span class="stat-label">SETS</span><span class="stat-value">${S.seriesWins[i]}</span><span class="stat-label">LEGS</span><span class="stat-value">${S.legs[i]}</span></div></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit(true);});});
- $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=entry?'OK = punktid · mängija kast = soovitud jääk · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta punktid või soovitud jääk';
- $('undoBtn').disabled=!undoStack.length;$('undoBtn').style.opacity=undoStack.length?1:.45;
- $('redoBtn').disabled=!redoStack.length;$('redoBtn').style.opacity=redoStack.length?1:.45;
+ $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=S.botThinking?'SMART BOT viskab…':(entry?'OK = punktid · mängija kast = soovitud jääk · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta punktid või soovitud jääk');
+ const botLocked=!!S.botThinking||(isSmartBot()&&S.turn===1);$('keypad').querySelectorAll('button').forEach(b=>b.disabled=botLocked);$('undoBtn').disabled=botLocked||!undoStack.length;$('redoBtn').disabled=botLocked||!redoStack.length;
+ $('undoBtn').style.opacity=undoStack.length?1:.45;
+ $('redoBtn').style.opacity=redoStack.length?1:.45;
  $('closeGameBtn').classList.toggle('hidden',!document.body.classList.contains('playing'));
 }
 function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -680,6 +814,7 @@ function keypad(){
   b.addEventListener('selectstart',e=>e.preventDefault());
   let timer=null,held=false,pointerActive=false;
   const activate=()=>{
+   if(S?.botThinking||(isSmartBot()&&S.turn===1))return;
    if(v==='OK')submitVisit();
    else if(v==='⌫'){
     if(entry.length)redoStack=[];
@@ -692,6 +827,7 @@ function keypad(){
   };
   // Pointer events handle the physical tap once; click is reserved for keyboard/accessibility.
   b.addEventListener('pointerdown',e=>{
+   if(S?.botThinking||(isSmartBot()&&S.turn===1))return;
    if(e.pointerType==='mouse'&&e.button!==0)return;
    e.preventDefault();
    pointerActive=true;
@@ -730,7 +866,7 @@ function keypad(){
 function snapshot(){return JSON.parse(JSON.stringify({state:S,persistent}));}
 function recordVisit(i,value){if(!S.visitHistory)S.visitHistory=[[],[]];S.visitHistory[i].push(value);if(S.visitHistory[i].length>5)S.visitHistory[i].shift();if(typeof value==='number'&&Number.isFinite(value)){if(!S.visitScores)S.visitScores=[[],[]];if(!S.visitScores[i])S.visitScores[i]=[];S.visitScores[i].push(value);}}
 function restore(){
- if(!undoStack.length)return;
+ if(S?.botThinking||!undoStack.length)return;
  redoStack.push(snapshot());
  let previous=undoStack.pop();
  S=previous.state;persistent=previous.persistent;save();
@@ -738,7 +874,7 @@ function restore(){
  entry='';show('game');render();
 }
 function redo(){
- if(!redoStack.length)return;
+ if(S?.botThinking||!redoStack.length)return;
  undoStack.push(snapshot());
  let next=redoStack.pop();
  S=next.state;persistent=next.persistent;save();
@@ -747,6 +883,7 @@ function redo(){
 }
 function addDarts(i,n){S.legStats[i].darts+=n;S.gameStats[i].darts+=n;}
 function submitVisit(asRemaining=false){
+ if(S?.botThinking||(isSmartBot()&&S.turn===1))return;
  let input=entry===''?0:+entry;
  if(!Number.isInteger(input)||input<0||input>180){alert('Sisesta 0–180.');return;}
  let i=S.turn;
@@ -754,9 +891,9 @@ function submitVisit(asRemaining=false){
  let v=asRemaining?S.score[i]-input:input;
  if(v>180){alert('Ühe käiguga ei saa sisestada üle 180 punkti.');return;}
  let remaining=S.score[i]-v;redoStack=[];undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
- if(remaining<0||remaining===1||(remaining===0&&cfg.out==='double')){recordVisit(i,'BUST');addDarts(i,3);S.seriesStats[i].darts+=3;S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;S.turn=1-i;entry='';render();alert('BUST – skoor jääb samaks.');return;}
+ if(remaining<0||remaining===1||(remaining===0&&cfg.out==='double')){recordVisit(i,'BUST');addDarts(i,3);S.seriesStats[i].darts+=3;S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;S.turn=1-i;entry='';render();maybeStartBotTurn();alert('BUST – skoor jääb samaks.');return;}
  if(remaining===0){undoStack.pop();undoState=undoStack.length?undoStack[undoStack.length-1]:null;entry='';alert('Double Out: lõpeta pika vajutusega 1, 2 või 3.');return;}
- recordVisit(i,v);S.score[i]=remaining;S.legStats[i].points+=v;S.gameStats[i].points+=v;S.seriesStats[i].points+=v;S.legStats[i].darts+=3;S.gameStats[i].darts+=3;S.seriesStats[i].darts+=3;S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;S.legStats[i].high=Math.max(S.legStats[i].high,v);S.gameStats[i].high=Math.max(S.gameStats[i].high,v);S.seriesStats[i].high=Math.max(S.seriesStats[i].high,v);S.turn=1-i;entry='';render();
+ recordVisit(i,v);S.score[i]=remaining;S.legStats[i].points+=v;S.gameStats[i].points+=v;S.seriesStats[i].points+=v;S.legStats[i].darts+=3;S.gameStats[i].darts+=3;S.seriesStats[i].darts+=3;S.legStats[i].visits++;S.gameStats[i].visits++;S.seriesStats[i].visits++;S.legStats[i].high=Math.max(S.legStats[i].high,v);S.gameStats[i].high=Math.max(S.gameStats[i].high,v);S.seriesStats[i].high=Math.max(S.seriesStats[i].high,v);S.turn=1-i;entry='';render();maybeStartBotTurn();
 }
 function canCheckout(score,darts){
  if(!Number.isInteger(score)||score<=0||!Number.isInteger(darts)||darts<1||darts>3)return false;
@@ -776,6 +913,7 @@ function canCheckout(score,darts){
  return false;
 }
 function finishByDarts(n){
+ if(S?.botThinking||(isSmartBot()&&S.turn===1))return;
  let score=S.score[S.turn],i=S.turn;
  if(!canCheckout(score,n)){alert(`Skoori ${score} ei saa selle reegli järgi ${n} noolega lõpetada.`);return;}
  redoStack=[];undoStack.push(snapshot());undoState=undoStack[undoStack.length-1];
@@ -791,11 +929,11 @@ function finishByDarts(n){
 function finishLeg(winner,darts){
  S.legs[winner]++;S.legHistory.push({winner,stats:S.legStats.map(x=>({...x}))});
  if(S.legs[winner]>=cfg.legs){finishMatch(winner);return;}
- S.score=[cfg.start,cfg.start];S.legStats=[stat(),stat()];S.visitHistory=[[],[]];S.legStarter=1-(S.legStarter??0);S.turn=S.legStarter;undoState=undoStack[undoStack.length-1]||null;render();
+ S.score=[cfg.start,cfg.start];S.legStats=[stat(),stat()];S.visitHistory=[[],[]];S.legStarter=1-(S.legStarter??0);S.turn=S.legStarter;undoState=undoStack[undoStack.length-1]||null;render();maybeStartBotTurn();
 }
 function finishMatch(winner){
  S.seriesWins[winner]++;
- let result={seriesId:S.seriesId,total:S.total,gameNo:S.gameNo,names:[...S.names],winner,legs:[...S.legs],stats:S.gameStats.map(x=>({...x})),legHistory:S.legHistory.map(x=>({...x})),visitScores:(S.visitScores||[[],[]]).map(x=>[...(x||[])]),bestFinish:[...(S.bestFinish||[0,0])]};
+ let result={seriesId:S.seriesId,total:S.total,isBotGame:!!S.isBotGame,gameNo:S.gameNo,names:[...S.names],winner,legs:[...S.legs],stats:S.gameStats.map(x=>({...x})),legHistory:S.legHistory.map(x=>({...x})),visitScores:(S.visitScores||[[],[]]).map(x=>[...(x||[])]),bestFinish:[...(S.bestFinish||[0,0])]};
  S.results.push(result);
  // Kui seerias on veel sete, alustame järgmist kohe ilma vahepealse kinnituse või popupita.
  if(S.gameNo<S.total){
@@ -803,6 +941,7 @@ function finishMatch(winner){
   S.setStarter=1-(S.setStarter??0);
   startGame();
   show('game');
+  maybeStartBotTurn();
   return;
  }
  finishSeries();
@@ -827,7 +966,7 @@ $('startBtn').onclick=startSeries;
 $('undoBtn').onclick=restore;
 $('redoBtn').onclick=redo;
 $('undoMatchBtn').onclick=restore;
-$('closeGameBtn').onclick=()=>{if(confirm('Katkestan käimasoleva mängu? Seda mängu ei salvestata.'))show('setup');};
+$('closeGameBtn').onclick=()=>{if(confirm('Katkestan käimasoleva mängu? Seda mängu ei salvestata.')){botTurnToken++;if(S)S.botThinking=false;show('setup');}};
 $('nextGameBtn').onclick=nextGame;
 $('endSeriesBtn').onclick=finishSeries;
 $('newSeriesBtn').onclick=()=>show('setup');
@@ -836,8 +975,8 @@ function renderHistory(){
  const groups=new Map();
  persistent.forEach((h,originalIndex)=>{
   const key=h.seriesId?`series:${h.seriesId}`:`legacy:${originalIndex}`;
-  if(!groups.has(key))groups.set(key,{key,items:[],indices:[],names:[...(h.names||[])],wins:[0,0],legs:[0,0],stats:[stat(),stat()],detailLegs:[],date:h.date||''});
-  const g=groups.get(key);g.items.push(h);g.indices.push(originalIndex);
+  if(!groups.has(key))groups.set(key,{key,items:[],indices:[],names:[...(h.names||[])],wins:[0,0],legs:[0,0],stats:[stat(),stat()],detailLegs:[],date:h.date||'',isBotGame:!!h.isBotGame||normName(h.names?.[1])==='smart'});
+  const g=groups.get(key);g.items.push(h);g.indices.push(originalIndex);g.isBotGame=g.isBotGame||!!h.isBotGame||normName(h.names?.[1])==='smart';
   if(new Date(h.date||0)>new Date(g.date||0))g.date=h.date;
   (h.names||[]).forEach((name,i)=>{if(name)g.names[i]=name;});
   if(Number.isInteger(h.winner))g.wins[h.winner]++;
@@ -847,7 +986,7 @@ function renderHistory(){
  });
  const newestFirst=Array.from(groups.values()).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
  const bestByPlayer=new Map();
- newestFirst.forEach(g=>g.names.forEach((name,i)=>{
+ newestFirst.forEach(g=>{if(g.isBotGame)return;g.names.forEach((name,i)=>{
   if(!name)return;
   const value=Number(avg(g.stats[i]));
   const current=bestByPlayer.get(name);
@@ -878,7 +1017,7 @@ function renderHistory(){
    current.bestFinish=Math.max(current.bestFinish||0,bestFinish);
    Object.entries(visitCounts).forEach(([key,count])=>current.visitCounts[key]=(current.visitCounts[key]||0)+count);
   }
- }));
+ });});
  const recordOrder=['100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
  const bestHtml=bestByPlayer.size?`<section class="historyitem" style="margin-bottom:14px"><b>MÄNGIJATE PARIM MÄNGU AVG</b><div class="history-avg-grid" style="margin-top:10px">${Array.from(bestByPlayer.entries()).map(([name,best],playerIndex)=>{const rows=recordOrder.filter(key=>(best.visitCounts[key]||0)>0).map(key=>`<div class="history-record-stats-row"><span>${key}</span><strong>${best.visitCounts[key]}</strong></div>`).join('');return `<div class="history-avg-player history-record-card" role="button" tabindex="0" aria-expanded="false" data-toggle-record="${playerIndex}"><div class="history-avg-name">${esc(name)}</div><div class="history-best-row"><span>AVG</span><strong>${best.display}</strong></div><div class="history-best-row"><span>LEG</span><strong>${best.bestLeg?best.bestLeg.display:'–'}</strong></div><div class="history-best-row"><span>NOOLED</span><strong>${Number.isFinite(best.minDarts)?best.minDarts:'–'}</strong></div><div class="history-record-stats hidden" id="historyRecordStats${playerIndex}"><div class="history-record-stats-row"><span>PARIM LÕPP</span><strong>${best.bestFinish||'–'}</strong></div>${rows}</div></div>`;}).join('')}</div><div class="muted small" style="margin-top:7px">Vajuta mängija ruudule visketulemuste statistika avamiseks</div></section>`:'';
  const gamesHtml=newestFirst.length?newestFirst.map((g,groupIndex)=>{
