@@ -66,6 +66,8 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 .history-leg-winner{display:inline-block;flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#35d06f;box-shadow:0 0 5px rgba(53,208,111,.45)}
 .history-detail th:first-child,.history-detail td:first-child{width:54px;color:var(--muted)}
 .history-best-darts{font-size:12px;color:var(--muted);margin-top:3px}
+.history-best-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:7px;font-size:12px;color:var(--muted);text-align:left}
+.history-best-row strong{font-size:16px;line-height:1.2;color:#fff;font-weight:800;font-variant-numeric:tabular-nums}
 .toast{background:#2d4a3d;border-radius:10px;padding:10px;text-align:center;margin:8px 0;font-size:13px}
 footer{color:#7890a3;font-size:10px;text-align:center;margin:20px 0}
 @media(min-width:500px){.app{padding-top:28px}.score{font-size:52px}}
@@ -791,12 +793,24 @@ function renderHistory(){
  const newestFirst=Array.from(groups.values()).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
  const bestByPlayer=new Map();
  newestFirst.forEach(g=>g.names.forEach((name,i)=>{
-  if(!name)return;const value=Number(avg(g.stats[i]));const current=bestByPlayer.get(name);
-  const minDarts=g.detailLegs.reduce((min,leg)=>{if(leg.winner!==i)return min;const darts=Number(leg.stats[i]?.darts)||0;return darts>0?Math.min(min,darts):min;},Infinity);
-  if(!current||value>current.value)bestByPlayer.set(name,{value,display:avg(g.stats[i]),minDarts});
-  else if(minDarts<current.minDarts)current.minDarts=minDarts;
+  if(!name)return;
+  const value=Number(avg(g.stats[i]));
+  const current=bestByPlayer.get(name);
+  const wonLegs=g.detailLegs.filter(leg=>leg.winner===i).map(leg=>leg.stats[i]).filter(st=>st&&Number(st.darts)>0);
+  const minDarts=wonLegs.reduce((min,st)=>Math.min(min,Number(st.darts)),Infinity);
+  const bestLeg=wonLegs.reduce((best,st)=>{
+   const legAvg=Number(avg(st));
+   return !best||legAvg>best.value?{value:legAvg,display:avg(st)}:best;
+  },null);
+  if(!current){
+   bestByPlayer.set(name,{value,display:avg(g.stats[i]),minDarts,bestLeg});
+  }else{
+   if(value>current.value){current.value=value;current.display=avg(g.stats[i]);}
+   if(minDarts<current.minDarts)current.minDarts=minDarts;
+   if(bestLeg&&(!current.bestLeg||bestLeg.value>current.bestLeg.value))current.bestLeg=bestLeg;
+  }
  }));
- const bestHtml=bestByPlayer.size?`<section class="historyitem" style="margin-bottom:14px"><b>MÄNGIJATE PARIM MÄNGU AVG</b><div class="history-avg-grid" style="margin-top:10px">${Array.from(bestByPlayer.entries()).map(([name,best])=>`<div class="history-avg-player"><div class="history-avg-name">${esc(name)}</div><div class="history-avg-value">${best.display}</div><div class="history-best-darts">Parim leg: ${Number.isFinite(best.minDarts)?best.minDarts:'–'} noolt</div></div>`).join('')}</div></section>`:'';
+ const bestHtml=bestByPlayer.size?`<section class="historyitem" style="margin-bottom:14px"><b>MÄNGIJATE PARIM MÄNGU AVG</b><div class="history-avg-grid" style="margin-top:10px">${Array.from(bestByPlayer.entries()).map(([name,best])=>`<div class="history-avg-player"><div class="history-avg-name">${esc(name)}</div><div class="history-best-row"><span>AVG</span><strong>${best.display}</strong></div><div class="history-best-row"><span>LEG</span><strong>${best.bestLeg?best.bestLeg.display:'–'}</strong></div><div class="history-best-row"><span>NOOLED</span><strong>${Number.isFinite(best.minDarts)?best.minDarts:'–'}</strong></div></div>`).join('')}</div></section>`:'';
  const gamesHtml=newestFirst.length?newestFirst.map((g,groupIndex)=>{
   const count=g.items.length;const score=`${g.wins[0]} : ${g.wins[1]}`;
   const outcome=g.wins[0]===g.wins[1]?'Seeria jäi viiki':`${esc(g.names[g.wins[0]>g.wins[1]?0:1])} võitis seeria`;
