@@ -598,7 +598,7 @@ function startSeries(){
  saveSetup();
  let n=+$('gamesTotal').value;if(!Number.isInteger(n)||n<1||n>20){alert('Vali 1–20 mängu.');return;}
  let names=[$('p1').value.trim()||'Mängija 1',$('p2').value.trim()||'Mängija 2'];
- S={names,total:n,gameNo:1,seriesWins:[0,0],results:[],legs:[0,0],score:[cfg.start,cfg.start],turn:0,setStarter:0,legStarter:0,legStats:[stat(),stat()],gameStats:[stat(),stat()],seriesStats:[stat(),stat()],legHistory:[],visitHistory:[[],[]]};
+ S={names,total:n,seriesId:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,gameNo:1,seriesWins:[0,0],results:[],legs:[0,0],score:[cfg.start,cfg.start],turn:0,setStarter:0,legStarter:0,legStats:[stat(),stat()],gameStats:[stat(),stat()],seriesStats:[stat(),stat()],legHistory:[],visitHistory:[[],[]]};
  startGame();show('game');
 }
 function startGame(){S.legs=[0,0];S.score=[cfg.start,cfg.start];S.turn=S.setStarter??0;S.legStarter=S.turn;S.legStats=[stat(),stat()];S.gameStats=[stat(),stat()];S.legHistory=[];S.visitHistory=[[],[]];entry='';undoStack=[];redoStack=[];undoState=null;render();}
@@ -630,7 +630,7 @@ window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120))
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 64`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 65`;
  $('players').innerHTML='';
  S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta player-stats"><div class="stat-row"><span>LEGI AVG</span><span class="stat-value">${avg(S.legStats[i])}</span></div><div class="stat-row"><span>MÄNGU AVG</span><span class="stat-value">${avg(S.seriesStats?.[i]||stat())}</span></div><div class="stat-row"><span>LEGI NOOLED</span><span class="stat-value">${S.legStats[i].darts}</span></div><div class="setleg-inline"><span class="stat-label">SETS</span><span class="stat-value">${S.seriesWins[i]}</span><span class="stat-label">LEGS</span><span class="stat-value">${S.legs[i]}</span></div></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit(true);});});
  $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=entry?'OK = punktid · mängija kast = soovitud jääk · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta punktid või soovitud jääk';
@@ -726,7 +726,7 @@ function finishLeg(winner,darts){
 }
 function finishMatch(winner){
  S.seriesWins[winner]++;
- let result={gameNo:S.gameNo,names:[...S.names],winner,legs:[...S.legs],stats:S.gameStats.map(x=>({...x})),legHistory:S.legHistory.map(x=>({...x}))};
+ let result={seriesId:S.seriesId,total:S.total,gameNo:S.gameNo,names:[...S.names],winner,legs:[...S.legs],stats:S.gameStats.map(x=>({...x})),legHistory:S.legHistory.map(x=>({...x}))};
  S.results.push(result);persistent.unshift({date:new Date().toISOString(),...result});persistent=persistent.slice(0,200);save();
  // Kui seerias on veel sete, alustame järgmist kohe ilma vahepealse kinnituse või popupita.
  if(S.gameNo<S.total){
@@ -752,26 +752,38 @@ $('nextGameBtn').onclick=nextGame;
 $('endSeriesBtn').onclick=finishSeries;
 $('newSeriesBtn').onclick=()=>show('setup');
 function renderHistory(){
- const bestByPlayer=new Map();
- persistent.forEach(h=>{
-  (h.names||[]).forEach((name,i)=>{
-   if(!name||!h.stats||!h.stats[i])return;
-   const value=Number(avg(h.stats[i]));
-   const current=bestByPlayer.get(name);
-   if(!current||value>current.value)bestByPlayer.set(name,{value,display:avg(h.stats[i])});
-  });
+ // Koonda ühe mänguseeria kõik lõpetatud mängud üheks ajalookirjeks.
+ const groups=new Map();
+ persistent.forEach((h,originalIndex)=>{
+  const key=h.seriesId?`series:${h.seriesId}`:`legacy:${originalIndex}`;
+  if(!groups.has(key))groups.set(key,{key,items:[],indices:[],names:[...(h.names||[])],wins:[0,0],legs:[0,0],stats:[stat(),stat()],date:h.date||''});
+  const g=groups.get(key);g.items.push(h);g.indices.push(originalIndex);
+  if(new Date(h.date||0)>new Date(g.date||0))g.date=h.date;
+  (h.names||[]).forEach((name,i)=>{if(name)g.names[i]=name;});
+  if(Number.isInteger(h.winner))g.wins[h.winner]++;
+  (h.legs||[0,0]).forEach((v,i)=>g.legs[i]+=Number(v)||0);
+  (h.stats||[]).forEach((v,i)=>{if(!v)return;g.stats[i].points+=Number(v.points)||0;g.stats[i].darts+=Number(v.darts)||0;g.stats[i].high=Math.max(g.stats[i].high,Number(v.high)||0);g.stats[i].visits+=Number(v.visits)||0;});
  });
+ const newestFirst=Array.from(groups.values()).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+ const bestByPlayer=new Map();
+ newestFirst.forEach(g=>g.names.forEach((name,i)=>{
+  if(!name)return;const value=Number(avg(g.stats[i]));const current=bestByPlayer.get(name);
+  if(!current||value>current.value)bestByPlayer.set(name,{value,display:avg(g.stats[i])});
+ }));
  const bestHtml=bestByPlayer.size?`<section class="historyitem" style="margin-bottom:14px"><b>MÄNGIJATE PARIM MÄNGU AVG</b><div class="history-avg-grid" style="margin-top:10px">${Array.from(bestByPlayer.entries()).map(([name,best])=>`<div class="history-avg-player"><div class="history-avg-name">${esc(name)}</div><div class="history-avg-value">${best.display}</div></div>`).join('')}</div></section>`:'';
- const newestFirst=persistent.map((h,originalIndex)=>({h,originalIndex})).sort((a,b)=>new Date(b.h.date||0)-new Date(a.h.date||0));
- const gamesHtml=newestFirst.length?newestFirst.map(({h,originalIndex})=>`<div class="historyitem"><b>${esc(h.names[h.winner])}</b> võitis · ${esc(h.names[0])} ${h.legs[0]}:${h.legs[1]} ${esc(h.names[1])}<div class="muted small" style="margin-top:5px">${new Date(h.date).toLocaleString('et-EE')}</div><div class="history-avg-grid"><div class="history-avg-player"><div class="history-avg-name">${esc(h.names[0])}</div><div class="history-avg-value">${avg(h.stats[0])}</div></div><div class="history-avg-player"><div class="history-avg-name">${esc(h.names[1])}</div><div class="history-avg-value">${avg(h.stats[1])}</div></div></div><button class="secondary danger" data-delete-history="${originalIndex}" style="width:100%;margin-top:10px">KUSTUTA MÄNG</button></div>`).join(''):'Ajaloos pole veel mänge.';
+ const gamesHtml=newestFirst.length?newestFirst.map(g=>{
+  const count=g.items.length;const score=`${g.wins[0]} : ${g.wins[1]}`;
+  const outcome=g.wins[0]===g.wins[1]?'Seeria jäi viiki':`${esc(g.names[g.wins[0]>g.wins[1]?0:1])} võitis seeria`;
+  const indices=g.indices.join(',');
+  return `<div class="historyitem"><b>${outcome}</b> · ${esc(g.names[0])} ${score} ${esc(g.names[1])}<div class="muted small" style="margin-top:5px">${count} mängu · ${new Date(g.date).toLocaleString('et-EE')}</div><div class="muted small" style="margin-top:3px">Legid kokku: ${g.legs[0]} : ${g.legs[1]}</div><div class="history-avg-grid"><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[0])}</div><div class="history-avg-value">${avg(g.stats[0])}</div></div><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[1])}</div><div class="history-avg-value">${avg(g.stats[1])}</div></div></div><button class="secondary danger" data-delete-series="${indices}" style="width:100%;margin-top:10px">KUSTUTA SEERIA</button></div>`;
+ }).join(''):'Ajaloos pole veel mänge.';
  $('historyList').innerHTML=bestHtml+gamesHtml;
- $('historyList').querySelectorAll('[data-delete-history]').forEach(button=>button.addEventListener('click',()=>{
-  const index=Number(button.dataset.deleteHistory);
-  if(!Number.isInteger(index)||index<0||index>=persistent.length)return;
-  const h=persistent[index];
-  if(!confirm(`Kas kustutan ajaloo mängu: ${h.names[0]} ${h.legs[0]}:${h.legs[1]} ${h.names[1]}?`))return;
-  persistent.splice(index,1);save();renderHistory();
-  $('historyPreview').textContent=persistent.length?`${persistent.length} salvestatud mängu.`:'Mänge pole veel salvestatud.';
+ $('historyList').querySelectorAll('[data-delete-series]').forEach(button=>button.addEventListener('click',()=>{
+  const indices=button.dataset.deleteSeries.split(',').map(Number).filter(Number.isInteger);
+  if(!indices.length)return;
+  if(!confirm('Kas kustutan kogu selle mänguseeria ajaloo?'))return;
+  indices.sort((a,b)=>b-a).forEach(index=>{if(index>=0&&index<persistent.length)persistent.splice(index,1);});
+  save();renderHistory();$('historyPreview').textContent=persistent.length?`${new Set(persistent.map((h,i)=>h.seriesId||`legacy-${i}`)).size} salvestatud seeriat.`:'Mänge pole veel salvestatud.';
  }));
 }
 $('viewHistory').onclick=()=>{renderHistory();show('historyScreen');window.scrollTo(0,0);};
