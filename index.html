@@ -523,6 +523,12 @@ body.playing #game .player-stats .setleg-inline{
 body.playing #game .player-stats .setleg-inline .stat-value{
  min-width:2ch!important;
 }
+
+/* v72: lock the active game viewport; other screens remain scrollable. */
+html:has(body.playing),body.playing{overflow:hidden!important;overscroll-behavior:none!important;height:100%!important;position:relative!important}
+body.playing{touch-action:none!important}
+body.playing .app,body.playing #game{overscroll-behavior:none!important;touch-action:none!important}
+body.playing button,body.playing input,body.playing select{touch-action:manipulation!important}
 </style>
 </head>
 <body>
@@ -837,5 +843,11 @@ $('viewHistory').onclick=()=>{renderHistory();show('historyScreen');window.scrol
 $('backSetup').onclick=()=>show('setup');
 keypad();
 $('historyPreview').textContent=persistent.length?`${persistent.length} salvestatud mängu.`:'Mänge pole veel salvestatud.';
+
+// v72: block touch-driven page scrolling only during an active game.
+// Do not cancel touchstart/end: keypad taps and long-press checkout must still work.
+document.addEventListener('touchmove',function(event){
+ if(document.body.classList.contains('playing')&&event.cancelable)event.preventDefault();
+},{passive:false});
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(err=>console.warn("PWA:",err)));}</script></body></html>
