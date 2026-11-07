@@ -545,20 +545,20 @@ body.playing button,body.playing input,body.playing select{touch-action:manipula
 .player-leg-high{font-size:18px!important;line-height:1.1!important;font-weight:900!important;color:#fff!important;min-width:18px;text-align:left}
 body.playing #game #players .playername{font-size:19px!important;line-height:1.15!important;font-weight:800!important}
 
-/* v86: kompaktne seadete vaade – mahub telefoni ekraanile */
+/* v87: seadete vaade jääb loetavaks; vähendame ainult liigseid vahesid */
 @media(max-width:600px) and (max-height:900px){
- body:not(.playing) .app{padding:calc(4px + env(safe-area-inset-top)) 11px calc(4px + env(safe-area-inset-bottom))!important}
- body:not(.playing) header{margin-bottom:5px!important}
- body:not(.playing) .logo{font-size:19px!important}
- body:not(.playing) #setup .panel{padding:8px 10px!important;margin:5px 0!important;border-radius:12px!important}
- body:not(.playing) #setup .panel h2{font-size:14px!important;margin:0 0 5px!important}
- body:not(.playing) #setup label{font-size:11px!important;margin:5px 0 3px!important}
- body:not(.playing) #setup input{padding:8px 10px!important;font-size:16px!important;min-height:38px!important}
- body:not(.playing) #setup .choice{padding:9px 5px!important;font-size:13px!important}
- body:not(.playing) #setup .primary{padding:11px!important;margin-top:8px!important}
- body:not(.playing) #setup .secondary{padding:9px!important;font-size:12px!important}
- body:not(.playing) #setup #historyPreview{font-size:11px!important}
- body:not(.playing) #setup #viewHistory{margin-top:6px!important}
+ body:not(.playing) .app{padding:calc(6px + env(safe-area-inset-top)) 12px calc(6px + env(safe-area-inset-bottom))!important}
+ body:not(.playing) header{margin-bottom:7px!important}
+ body:not(.playing) .logo{font-size:21px!important}
+ body:not(.playing) #setup .panel{padding:11px 12px!important;margin:7px 0!important;border-radius:12px!important}
+ body:not(.playing) #setup .panel h2{font-size:16px!important;margin:0 0 7px!important}
+ body:not(.playing) #setup label{font-size:13px!important;margin:6px 0 4px!important}
+ body:not(.playing) #setup input{padding:9px 11px!important;font-size:16px!important;min-height:42px!important}
+ body:not(.playing) #setup .choice{padding:10px 6px!important;font-size:14px!important}
+ body:not(.playing) #setup .primary{padding:12px!important;margin-top:9px!important;font-size:15px!important}
+ body:not(.playing) #setup .secondary{padding:10px!important;font-size:13px!important}
+ body:not(.playing) #setup #historyPreview{font-size:12px!important}
+ body:not(.playing) #setup #viewHistory{margin-top:7px!important}
 }
 </style>
 </head>
@@ -615,7 +615,7 @@ body.playing #game #players .playername{font-size:19px!important;line-height:1.1
 <button class="secondary" id="backSetup" style="width:100%;margin:0 0 12px">↶ TAGASI</button>
 <div class="panel" id="historyList"></div>
 </main>
-<footer>Versioon 79 · Ajalugu sünkroonitakse Supabase’iga.</footer>
+<footer>Versioon 87 · Ajalugu sünkroonitakse Supabase’iga.</footer>
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
@@ -817,7 +817,7 @@ window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120))
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 86`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 87`;
  $('players').innerHTML='';
  S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`${S.legStarter===i?'<span class="player-starter-dot" title="Alustas legi" aria-label="Alustas legi"></span>':''}<span class="player-leg-high" title="Selle legi suurim viskevoor">${S.legStats[i].high||0}</span><div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta player-stats"><div class="stat-row"><span>LEGI AVG</span><span class="stat-value">${avg(S.legStats[i])}</span></div><div class="stat-row"><span>MÄNGU AVG</span><span class="stat-value">${avg(S.seriesStats?.[i]||stat())}</span></div><div class="stat-row"><span>LEGI NOOLED</span><span class="stat-value">${S.legStats[i].darts}</span></div><div class="setleg-inline"><span class="stat-label">SETS</span><span class="stat-value">${S.seriesWins[i]}</span><span class="stat-label">LEGS</span><span class="stat-value">${S.legs[i]}</span></div></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);
   // Kaardi puudutus kinnitab jäägi kohe pointerdown sündmusel, ilma click-viivituseta.
