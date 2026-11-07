@@ -588,7 +588,8 @@ body.playing #game #players .playername{font-size:19px!important;line-height:1.1
 
 <main id="seriesEnd" class="hidden">
 <h1>Seeria tulemused</h1><div class="panel" id="seriesSummary"></div>
-<button class="primary" id="newSeriesBtn">UUS MÄNGUSEERIA</button>
+<button class="primary" id="newSeriesBtn">ALUSTA UUT MÄNGU</button>
+<button class="secondary" id="finishAppBtn" style="width:100%;margin-top:10px">LÕPETA</button>
 </main>
 
 <main id="historyScreen" class="hidden">
@@ -800,7 +801,7 @@ window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120))
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 83`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 85`;
  $('players').innerHTML='';
  S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`${S.legStarter===i?'<span class="player-starter-dot" title="Alustas legi" aria-label="Alustas legi"></span>':''}<span class="player-leg-high" title="Selle legi suurim viskevoor">${S.legStats[i].high||0}</span><div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta player-stats"><div class="stat-row"><span>LEGI AVG</span><span class="stat-value">${avg(S.legStats[i])}</span></div><div class="stat-row"><span>MÄNGU AVG</span><span class="stat-value">${avg(S.seriesStats?.[i]||stat())}</span></div><div class="stat-row"><span>LEGI NOOLED</span><span class="stat-value">${S.legStats[i].darts}</span></div><div class="setleg-inline"><span class="stat-label">SETS</span><span class="stat-value">${S.seriesWins[i]}</span><span class="stat-label">LEGS</span><span class="stat-value">${S.legs[i]}</span></div></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit(true);});});
  $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=S.botThinking?'SMART BOT viskab…':(entry?'OK = punktid · mängija kast = soovitud jääk · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta punktid või soovitud jääk');
@@ -979,7 +980,8 @@ $('undoMatchBtn').onclick=restore;
 $('closeGameBtn').onclick=()=>{if(confirm('Katkestan käimasoleva mängu? Seda mängu ei salvestata.')){botTurnToken++;if(S)S.botThinking=false;show('setup');}};
 $('nextGameBtn').onclick=nextGame;
 $('endSeriesBtn').onclick=finishSeries;
-$('newSeriesBtn').onclick=()=>show('setup');
+$('newSeriesBtn').onclick=startSeries;
+$('finishAppBtn').onclick=()=>show('setup');
 
 // Supabase'i ühine ajalugu. Publishable key ei ole salajane; omaniku kood jääb ainult omaniku telefoni.
 const SUPABASE_URL='https://dcuwoobocshgsnayessi.supabase.co';
