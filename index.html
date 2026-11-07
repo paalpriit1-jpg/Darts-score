@@ -650,7 +650,7 @@ window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120))
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 67`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 73`;
  $('players').innerHTML='';
  S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta player-stats"><div class="stat-row"><span>LEGI AVG</span><span class="stat-value">${avg(S.legStats[i])}</span></div><div class="stat-row"><span>MÄNGU AVG</span><span class="stat-value">${avg(S.seriesStats?.[i]||stat())}</span></div><div class="stat-row"><span>LEGI NOOLED</span><span class="stat-value">${S.legStats[i].darts}</span></div><div class="setleg-inline"><span class="stat-label">SETS</span><span class="stat-value">${S.seriesWins[i]}</span><span class="stat-label">LEGS</span><span class="stat-value">${S.legs[i]}</span></div></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit(true);});});
  $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=entry?'OK = punktid · mängija kast = soovitud jääk · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta punktid või soovitud jääk';
@@ -663,17 +663,57 @@ function keypad(){
  let vals=['1','2','3','4','5','6','7','8','9','⌫','0','OK'];
  $('keypad').innerHTML='';
  vals.forEach(v=>{
-  let b=document.createElement('button');b.className='key'+(v==='OK'?' ok':v==='⌫'?' del':'');b.textContent=v;b.setAttribute('draggable','false');b.addEventListener('contextmenu',e=>e.preventDefault());b.addEventListener('selectstart',e=>e.preventDefault());
-  let timer=null,held=false;
-  if(['1','2','3'].includes(v)){
-   b.addEventListener('pointerdown',e=>{held=false;timer=setTimeout(()=>{held=true;finishByDarts(Number(v));},550);});
-   const cancel=()=>{if(timer){clearTimeout(timer);timer=null;}if(held)setTimeout(()=>{held=false;},700);};
-   b.addEventListener('pointerup',cancel);b.addEventListener('pointercancel',cancel);b.addEventListener('pointerleave',cancel);
-  }
-  b.addEventListener('click',e=>{
-   if(held){held=false;e.preventDefault();return;}
-   if(v==='OK')submitVisit();else if(v==='⌫'){if(entry.length)redoStack=[];entry=entry.slice(0,-1);}else if(entry.length<3){redoStack=[];entry+=v;}
+  let b=document.createElement('button');
+  b.className='key'+(v==='OK'?' ok':v==='⌫'?' del':'');
+  b.textContent=v;
+  b.setAttribute('draggable','false');
+  b.setAttribute('aria-label',v==='OK'?'Kinnita':v==='⌫'?'Kustuta viimane number':v);
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+  b.addEventListener('selectstart',e=>e.preventDefault());
+  let timer=null,held=false,pointerActive=false;
+  const activate=()=>{
+   if(v==='OK')submitVisit();
+   else if(v==='⌫'){
+    if(entry.length)redoStack=[];
+    entry=entry.slice(0,-1);
+   }else if(entry.length<3){
+    redoStack=[];
+    entry+=v;
+   }
    render();
+  };
+  // Pointer events handle the physical tap once; click is reserved for keyboard/accessibility.
+  b.addEventListener('pointerdown',e=>{
+   if(e.pointerType==='mouse'&&e.button!==0)return;
+   e.preventDefault();
+   pointerActive=true;
+   held=false;
+   try{b.setPointerCapture(e.pointerId);}catch(_){ }
+   if(['1','2','3'].includes(v)){
+    timer=setTimeout(()=>{
+     timer=null;
+     held=true;
+     finishByDarts(Number(v));
+    },550);
+   }
+  });
+  b.addEventListener('pointerup',e=>{
+   if(!pointerActive)return;
+   e.preventDefault();
+   pointerActive=false;
+   if(timer){clearTimeout(timer);timer=null;}
+   if(!held)activate();
+   held=false;
+  });
+  b.addEventListener('pointercancel',()=>{
+   pointerActive=false;
+   if(timer){clearTimeout(timer);timer=null;}
+   held=false;
+  });
+  b.addEventListener('click',e=>{
+   // Pointer-generated clicks are ignored to avoid duplicate or delayed input.
+   if(e.detail!==0)return;
+   activate();
   });
   $('keypad').appendChild(b);
  });
