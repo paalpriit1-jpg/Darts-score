@@ -885,25 +885,23 @@ function renderHistory(){
   const count=g.items.length;const score=`${g.wins[0]} : ${g.wins[1]}`;
   const outcome=g.wins[0]===g.wins[1]?'Seeria jäi viiki':`${esc(g.names[g.wins[0]>g.wins[1]?0:1])} võitis seeria`;
   const indices=g.indices.join(',');
-  const gameDetailsHtml=[...g.items].sort((a,b)=>(Number(a.gameNo)||1)-(Number(b.gameNo)||1)).map((item,itemIndex)=>{
-   const gameNo=Number(item.gameNo)||itemIndex+1;
-   const gameLegs=(item.legHistory||[]);
-   const detailRows=gameLegs.map((leg,legIndex)=>`<tr><td>Leg ${legIndex+1}</td>${[0,1].map(player=>{const st=leg.stats?.[player];const value=st&&Number(st.darts)>0?`${avg(st)} (${Number(st.darts)})`:'–';return `<td><span class="history-leg-cell">${value}${leg.winner===player?'<span class="history-leg-winner" title="Legi võitja" aria-label="Legi võitja"></span>':''}</span></td>`;}).join('')}</tr>`).join('');
-   const categories=['100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
-   const playerStats=[0,1].map(player=>{
-    const scores=(item.visitScores?.[player]||[]).map(Number).filter(Number.isFinite);
-    const counts={};
-    scores.forEach(score=>{let key=null;if(score>=100&&score<=119)key='100+';else if(score>=120&&score<=139)key='120+';else if(score>=140&&score<=159)key='140+';else if(score>=160&&score<=169)key='160+';else if(Number.isInteger(score)&&score>=170&&score<=180)key=String(score);if(key)counts[key]=(counts[key]||0)+1;});
-    const rows=categories.filter(key=>(counts[key]||0)>0).map(key=>`<div class="history-record-stats-row"><span>${key}</span><strong>${counts[key]}</strong></div>`).join('');
-    const bestFinish=Number(item.bestFinish?.[player])||0;
-    const bestRow=bestFinish?`<div class="history-record-stats-row"><span>PARIM LÕPP</span><strong>${bestFinish}</strong></div>`:'';
-    return `<div class="history-avg-player"><div class="history-avg-name">${esc(g.names[player]||`Mängija ${player+1}`)}</div><div class="history-record-stats">${bestRow}${rows||(!bestRow?'<div class="muted small">Statistika puudub</div>':'')}</div></div>`;
-   });
-   const statsHtml=playerStats.some((_,player)=>Number(item.bestFinish?.[player])>0||(item.visitScores?.[player]||[]).some(score=>Number(score)>=100))?`<div class="history-avg-grid" style="margin-top:10px">${playerStats.join('')}</div>`:'';
-   return `<section class="history-game-detail"><b>MÄNG ${gameNo}</b><table><thead><tr><th>Leg</th><th>${esc(g.names[0])}</th><th>${esc(g.names[1])}</th></tr></thead><tbody>${detailRows||'<tr><td colspan="3">Legide detailid puuduvad</td></tr>'}</tbody></table><div class="muted small" style="margin-top:10px;margin-bottom:4px">VISKETULEMUSTE STATISTIKA</div>${statsHtml}</section>`;
-  }).join('');
-  const detailHtml=`<div class="history-detail hidden" id="historyDetail${groupIndex}">${gameDetailsHtml}</div>`;
-  return `<div class="historyitem"><div class="history-series-card" role="button" tabindex="0" aria-expanded="false" data-toggle-detail="${groupIndex}"><b>${outcome}</b> · ${esc(g.names[0])} ${score} ${esc(g.names[1])}<div class="muted small" style="margin-top:5px">${count} mängu · ${new Date(g.date).toLocaleString('et-EE')}</div><div class="muted small" style="margin-top:3px">Legid kokku: ${g.legs[0]} : ${g.legs[1]}</div><div class="history-avg-grid"><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[0])}</div><div class="history-avg-value">${avg(g.stats[0])}</div></div><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[1])}</div><div class="history-avg-value">${avg(g.stats[1])}</div></div></div><div class="muted small" style="margin-top:8px">Vajuta detailide avamiseks</div></div>${detailHtml}<button class="secondary danger" data-delete-series="${indices}" style="width:100%;margin-top:10px">KUSTUTA SEERIA</button></div>`;
+  const orderedItems=[...g.items].sort((a,b)=>(Number(a.gameNo)||1)-(Number(b.gameNo)||1));
+  const allLegs=orderedItems.flatMap(item=>(item.legHistory||[]).map(leg=>({winner:leg.winner,stats:leg.stats||[]})));
+  const detailRows=allLegs.map((leg,legIndex)=>`<tr><td>Leg ${legIndex+1}</td>${[0,1].map(player=>{const st=leg.stats?.[player];const value=st&&Number(st.darts)>0?`${avg(st)} (${Number(st.darts)})`:'–';return `<td><span class="history-leg-cell">${value}${leg.winner===player?'<span class="history-leg-winner" title="Legi võitja" aria-label="Legi võitja"></span>':''}</span></td>`;}).join('')}</tr>`).join('');
+  const categories=['100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
+  const playerStats=[0,1].map(player=>{
+   const scores=orderedItems.flatMap(item=>(item.visitScores?.[player]||[]).map(Number)).filter(Number.isFinite);
+   const counts={};
+   scores.forEach(score=>{let key=null;if(score>=100&&score<=119)key='100+';else if(score>=120&&score<=139)key='120+';else if(score>=140&&score<=159)key='140+';else if(score>=160&&score<=169)key='160+';else if(Number.isInteger(score)&&score>=170&&score<=180)key=String(score);if(key)counts[key]=(counts[key]||0)+1;});
+   const rows=categories.filter(key=>(counts[key]||0)>0).map(key=>`<div class="history-record-stats-row"><span>${key}</span><strong>${counts[key]}</strong></div>`).join('');
+   const bestFinish=orderedItems.reduce((best,item)=>Math.max(best,Number(item.bestFinish?.[player])||0),0);
+   const bestRow=bestFinish?`<div class="history-record-stats-row"><span>PARIM LÕPP</span><strong>${bestFinish}</strong></div>`:'';
+   return `<div class="history-avg-player"><div class="history-avg-name">${esc(g.names[player]||`Mängija ${player+1}`)}</div><div class="history-record-stats">${bestRow}${rows||(!bestRow?'<div class="muted small">Statistika puudub</div>':'')}</div></div>`;
+  });
+  const statsHtml=playerStats.some((_,player)=>orderedItems.some(item=>Number(item.bestFinish?.[player])>0||(item.visitScores?.[player]||[]).some(score=>Number(score)>=100)))?`<div class="history-avg-grid" style="margin-top:10px">${playerStats.join('')}</div>`:'';
+  const detailContent=`<section class="history-game-detail"><table><thead><tr><th>Leg</th><th>${esc(g.names[0])}</th><th>${esc(g.names[1])}</th></tr></thead><tbody>${detailRows||'<tr><td colspan="3">Legide detailid puuduvad</td></tr>'}</tbody></table><div class="muted small" style="margin-top:10px;margin-bottom:4px">KOGU SEERIA VISKETULEMUSTE STATISTIKA</div>${statsHtml}</section>`;
+  const detailHtml=`<div class="history-detail hidden" id="historyDetail${groupIndex}">${detailContent}</div>`;
+  return `<div class="historyitem"><div class="history-series-card" role="button" tabindex="0" aria-expanded="false" data-toggle-detail="${groupIndex}"><b>${outcome}</b> · ${esc(g.names[0])} ${score} ${esc(g.names[1])}<div class="muted small" style="margin-top:5px">${count} setti · ${new Date(g.date).toLocaleString('et-EE')}</div><div class="muted small" style="margin-top:3px">Setid kokku: ${g.items.length} · Legid: ${g.legs[0]} : ${g.legs[1]}</div><div class="history-avg-grid"><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[0])}</div><div class="history-avg-value">${avg(g.stats[0])}</div></div><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[1])}</div><div class="history-avg-value">${avg(g.stats[1])}</div></div></div><div class="muted small" style="margin-top:8px">Vajuta detailide avamiseks</div></div>${detailHtml}<button class="secondary danger" data-delete-series="${indices}" style="width:100%;margin-top:10px">KUSTUTA SEERIA</button></div>`;
  }).join(''):'Ajaloos pole veel mänge.';
  $('historyList').innerHTML=bestHtml+gamesHtml;
  $('historyList').querySelectorAll('[data-toggle-record]').forEach(card=>{
