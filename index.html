@@ -33,7 +33,7 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 .player{background:var(--panel);border:1px solid #31485a;border-radius:15px;padding:13px;text-align:center;min-width:0}
 .player.active{border:2px solid var(--green2);padding:12px}
 .playername{font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.score{font-size:43px;font-weight:900;line-height:1.2;margin:8px 0}.score.unfinishable{color:#ff514d;text-shadow:0 0 8px rgba(255,65,65,.18)}
+.score{font-size:43px;font-weight:900;line-height:1.2;margin:8px 0}
 .meta{font-size:11px;color:var(--muted);line-height:1.8}
 .stat-value{display:inline-block;color:#fff;font-size:16px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.2px;text-shadow:0 0 .6px #fff}
 .turnpill{display:inline-block;background:#315344;color:#c5ffdf;padding:5px 9px;border-radius:99px;font-size:10px;font-weight:800;margin-top:5px}
@@ -586,10 +586,12 @@ body.playing button,body.playing input,body.playing select{touch-action:manipula
 
 <main id="historyScreen" class="hidden">
 <h1>Mängude ajalugu</h1>
+<div class="muted small" id="cloudStatus" style="margin:-8px 0 10px">Ühine ajalugu laadimata</div>
+<button class="secondary" id="ownerModeBtn" style="width:100%;margin:0 0 8px">KUSTUTAMISE ÕIGUS (omanik)</button>
 <button class="secondary" id="backSetup" style="width:100%;margin:0 0 12px">↶ TAGASI</button>
 <div class="panel" id="historyList"></div>
 </main>
-<footer>Andmed salvestatakse selles seadmes.</footer>
+<footer>Versioon 79 · Ajalugu sünkroonitakse Supabase’iga.</footer>
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
@@ -793,7 +795,7 @@ function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
  $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 79`;
  $('players').innerHTML='';
- S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score${S.score[i]>0&&S.score[i]<170&&!checkoutPlan(S.score[i],3)?' unfinishable':''}">${S.score[i]}</div><div class="meta player-stats"><div class="stat-row"><span>LEGI AVG</span><span class="stat-value">${avg(S.legStats[i])}</span></div><div class="stat-row"><span>MÄNGU AVG</span><span class="stat-value">${avg(S.seriesStats?.[i]||stat())}</span></div><div class="stat-row"><span>LEGI NOOLED</span><span class="stat-value">${S.legStats[i].darts}</span></div><div class="setleg-inline"><span class="stat-label">SETS</span><span class="stat-value">${S.seriesWins[i]}</span><span class="stat-label">LEGS</span><span class="stat-value">${S.legs[i]}</span></div></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit(true);});});
+ S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta player-stats"><div class="stat-row"><span>LEGI AVG</span><span class="stat-value">${avg(S.legStats[i])}</span></div><div class="stat-row"><span>MÄNGU AVG</span><span class="stat-value">${avg(S.seriesStats?.[i]||stat())}</span></div><div class="stat-row"><span>LEGI NOOLED</span><span class="stat-value">${S.legStats[i].darts}</span></div><div class="setleg-inline"><span class="stat-label">SETS</span><span class="stat-value">${S.seriesWins[i]}</span><span class="stat-label">LEGS</span><span class="stat-value">${S.legs[i]}</span></div></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);d.addEventListener('click',()=>{if(i===S.turn&&entry!=='')submitVisit(true);});});
  $('entryDisplay').textContent=entry||'—';$('entryHint').textContent=S.botThinking?'SMART BOT viskab…':(entry?'OK = punktid · mängija kast = soovitud jääk · hoia 1, 2 või 3 all lõpetamiseks':'Sisesta punktid või soovitud jääk');
  const botLocked=!!S.botThinking||(isSmartBot()&&S.turn===1);$('keypad').querySelectorAll('button').forEach(b=>b.disabled=botLocked);$('undoBtn').disabled=botLocked||!undoStack.length;$('redoBtn').disabled=botLocked||!redoStack.length;
  $('undoBtn').style.opacity=undoStack.length?1:.45;
@@ -956,6 +958,7 @@ function finishSeries(){
   persistent=persistent.slice(0,200);
   S.historySaved=true;
   save();
+  uploadCompletedSeries(persistent.filter(record=>record.seriesId===S.seriesId));
   $('historyPreview').textContent=`${new Set(persistent.map((h,i)=>h.seriesId||`legacy-${i}`)).size} salvestatud seeriat.`;
  }
  $('seriesSummary').innerHTML=`<h2>${esc(S.names[0])} ${S.seriesWins[0]} : ${S.seriesWins[1]} ${esc(S.names[1])}</h2>`+S.results.map(r=>`<div class="historyitem">Mäng ${r.gameNo}: ${esc(r.names[r.winner])} võitis · ${r.legs.join(' : ')}</div>`).join('')+(complete?'':'<p class="muted small">Seeria jäi pooleli ja seda ajalukku ei salvestatud.</p>');
@@ -970,6 +973,67 @@ $('closeGameBtn').onclick=()=>{if(confirm('Katkestan käimasoleva mängu? Seda m
 $('nextGameBtn').onclick=nextGame;
 $('endSeriesBtn').onclick=finishSeries;
 $('newSeriesBtn').onclick=()=>show('setup');
+
+// Supabase'i ühine ajalugu. Publishable key ei ole salajane; omaniku kood jääb ainult omaniku telefoni.
+const SUPABASE_URL='https://dcuwoobocshgsnayessi.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY='sb_publishable_Y_YKdkhFBj8HSO8CvGX7IQ_wgYqgDHQ';
+const HISTORY_FUNCTION_URL=SUPABASE_URL+'/functions/v1/darts-history';
+const SHARED_CODE_KEY='dartsSharedCode';
+const OWNER_CODE_KEY='dartsOwnerCode';
+let cloudRows=[];
+function cloudHeaders(owner=false){
+ const h={'Content-Type':'application/json','apikey':SUPABASE_PUBLISHABLE_KEY,'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY,'x-darts-code':localStorage.getItem(SHARED_CODE_KEY)||''};
+ if(owner)h['x-darts-owner-code']=localStorage.getItem(OWNER_CODE_KEY)||'';
+ return h;
+}
+async function cloudRequest(body,owner=false){
+ const response=await fetch(HISTORY_FUNCTION_URL,{method:'POST',headers:cloudHeaders(owner),body:JSON.stringify(body)});
+ let data={};try{data=await response.json();}catch(e){}
+ if(!response.ok)throw new Error(data.error||('Supabase HTTP '+response.status));
+ if(data.error)throw new Error(data.error);
+ return data;
+}
+function ownerEnabled(){return !!localStorage.getItem(OWNER_CODE_KEY);}
+$('ownerModeBtn').onclick=()=>{
+ const current=localStorage.getItem(OWNER_CODE_KEY)||'';
+ const value=prompt(current?'Sisesta omaniku kood uuesti või jäta tühjaks õiguse eemaldamiseks:':'Sisesta omaniku kustutamiskood. See salvestatakse ainult sellesse telefoni:');
+ if(value===null)return;
+ if(value.trim())localStorage.setItem(OWNER_CODE_KEY,value.trim());else localStorage.removeItem(OWNER_CODE_KEY);
+ renderHistory();
+};
+async function loadCloudHistory(){
+ const status=$('cloudStatus');status.textContent='Laen ühist ajalugu…';
+ try{
+  const data=await cloudRequest({action:'list'});
+  cloudRows=Array.isArray(data.matches)?data.matches:[];
+  const remote=[];
+  cloudRows.forEach(row=>{
+   const payload=row.match_data||{};
+   const records=Array.isArray(payload.records)?payload.records:(payload.series?payload.series:[payload]);
+   records.forEach(record=>{if(record&&record.names&&record.stats)remote.push({...record,cloudId:row.id,date:record.date||row.created_at||record.created_at});});
+  });
+  const known=new Set(persistent.map(x=>x.seriesId).filter(Boolean));
+  remote.forEach(record=>{if(!record.seriesId||!known.has(record.seriesId)){persistent.push(record);if(record.seriesId)known.add(record.seriesId);}});
+  persistent.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  save();
+  status.textContent=`Ühine ajalugu ühendatud · ${cloudRows.length} kirjet`;
+ }catch(error){status.textContent='Ühise ajaloo laadimine ebaõnnestus: '+error.message;}
+ renderHistory();
+}
+async function uploadCompletedSeries(records){
+ for(const record of records){
+  if(record.cloudSaved)continue;
+  try{
+   const saved=await cloudRequest({action:'add',player1:record.names?.[0]||'',player2:record.names?.[1]||'',winner:record.names?.[record.winner]||'',match_data:record,is_completed:true});
+   record.cloudSaved=true;record.cloudId=saved.match?.id||saved.id||record.cloudId;
+  }catch(error){console.error('Supabase salvestus ebaõnnestus:',error);$('historyPreview').textContent='Kohalikult salvestatud; ühisesse ajalukku saatmine ebaõnnestus.';}
+ }
+ save();
+}
+async function deleteCloudRows(ids){
+ for(const id of ids){await cloudRequest({action:'delete',id},true);}
+}
+
 function renderHistory(){
  // Koonda ühe mänguseeria kõik lõpetatud mängud üheks ajalookirjeks.
  const groups=new Map();
@@ -1040,7 +1104,7 @@ function renderHistory(){
   const statsHtml=playerStats.some((_,player)=>orderedItems.some(item=>Number(item.bestFinish?.[player])>0||(item.visitScores?.[player]||[]).some(score=>Number(score)>=100)))?`<div class="history-avg-grid" style="margin-top:10px">${playerStats.join('')}</div>`:'';
   const detailContent=`<section class="history-game-detail"><table><thead><tr><th>Leg</th><th>${esc(g.names[0])}</th><th>${esc(g.names[1])}</th></tr></thead><tbody>${detailRows||'<tr><td colspan="3">Legide detailid puuduvad</td></tr>'}</tbody></table><div class="muted small" style="margin-top:10px;margin-bottom:4px">KOGU SEERIA VISKETULEMUSTE STATISTIKA</div>${statsHtml}</section>`;
   const detailHtml=`<div class="history-detail hidden" id="historyDetail${groupIndex}">${detailContent}</div>`;
-  return `<div class="historyitem"><div class="history-series-card" role="button" tabindex="0" aria-expanded="false" data-toggle-detail="${groupIndex}"><b>${outcome}</b> · ${esc(g.names[0])} ${score} ${esc(g.names[1])}<div class="muted small" style="margin-top:5px">${count} setti · ${new Date(g.date).toLocaleString('et-EE')}</div><div class="muted small" style="margin-top:3px">Setid kokku: ${g.items.length} · Legid: ${g.legs[0]} : ${g.legs[1]}</div><div class="history-avg-grid"><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[0])}</div><div class="history-avg-value">${avg(g.stats[0])}</div></div><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[1])}</div><div class="history-avg-value">${avg(g.stats[1])}</div></div></div><div class="muted small" style="margin-top:8px">Vajuta detailide avamiseks</div></div>${detailHtml}<button class="secondary danger" data-delete-series="${indices}" style="width:100%;margin-top:10px">KUSTUTA SEERIA</button></div>`;
+  return `<div class="historyitem"><div class="history-series-card" role="button" tabindex="0" aria-expanded="false" data-toggle-detail="${groupIndex}"><b>${outcome}</b> · ${esc(g.names[0])} ${score} ${esc(g.names[1])}<div class="muted small" style="margin-top:5px">${count} setti · ${new Date(g.date).toLocaleString('et-EE')}</div><div class="muted small" style="margin-top:3px">Setid kokku: ${g.items.length} · Legid: ${g.legs[0]} : ${g.legs[1]}</div><div class="history-avg-grid"><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[0])}</div><div class="history-avg-value">${avg(g.stats[0])}</div></div><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[1])}</div><div class="history-avg-value">${avg(g.stats[1])}</div></div></div><div class="muted small" style="margin-top:8px">Vajuta detailide avamiseks</div></div>${detailHtml}${ownerEnabled()?`<button class="secondary danger" data-delete-series="${indices}" style="width:100%;margin-top:10px">KUSTUTA SEERIA</button>`:`<div class="muted small" style="margin-top:8px;text-align:center">Kustutamine ainult omaniku telefonis</div>`}</div>`;
  }).join(''):'Ajaloos pole veel mänge.';
  $('historyList').innerHTML=bestHtml+gamesHtml;
  $('historyList').querySelectorAll('[data-toggle-record]').forEach(card=>{
@@ -1051,15 +1115,18 @@ function renderHistory(){
   const toggle=()=>{const detail=$(`historyDetail${card.dataset.toggleDetail}`);const opening=detail.classList.contains('hidden');detail.classList.toggle('hidden');card.setAttribute('aria-expanded',String(opening));};
   card.addEventListener('click',toggle);card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();toggle();}});
  });
- $('historyList').querySelectorAll('[data-delete-series]').forEach(button=>button.addEventListener('click',()=>{
+ $('historyList').querySelectorAll('[data-delete-series]').forEach(button=>button.addEventListener('click',async()=>{
   const indices=button.dataset.deleteSeries.split(',').map(Number).filter(Number.isInteger);
   if(!indices.length)return;
   if(!confirm('Kas kustutan kogu selle mänguseeria ajaloo?'))return;
+  const selected=indices.map(index=>persistent[index]).filter(Boolean);
+  const cloudIds=selected.map(item=>item.cloudId).filter(Boolean);
+  if(cloudIds.length){try{await deleteCloudRows(cloudIds);}catch(error){alert('Ühisest ajaloost kustutamine ebaõnnestus: '+error.message);return;}}
   indices.sort((a,b)=>b-a).forEach(index=>{if(index>=0&&index<persistent.length)persistent.splice(index,1);});
   save();renderHistory();$('historyPreview').textContent=persistent.length?`${new Set(persistent.map((h,i)=>h.seriesId||`legacy-${i}`)).size} salvestatud seeriat.`:'Mänge pole veel salvestatud.';
  }));
 }
-$('viewHistory').onclick=()=>{renderHistory();show('historyScreen');window.scrollTo(0,0);};
+$('viewHistory').onclick=()=>{show('historyScreen');window.scrollTo(0,0);if(!localStorage.getItem(SHARED_CODE_KEY)){const code=prompt('Sisesta ühine mängukood (DARTS_SHARED_CODE):');if(code&&code.trim())localStorage.setItem(SHARED_CODE_KEY,code.trim());}loadCloudHistory();};
 $('backSetup').onclick=()=>show('setup');
 keypad();
 $('historyPreview').textContent=persistent.length?`${persistent.length} salvestatud mängu.`:'Mänge pole veel salvestatud.';
