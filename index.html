@@ -61,6 +61,9 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 .history-detail th,.history-detail td{padding:9px 5px;border-bottom:1px solid #34495a}
 .history-detail th{font-size:12px;color:#dce7ef;overflow-wrap:anywhere}
 .history-detail td{font-size:14px}
+.history-detail td:not(:first-child){white-space:nowrap;text-align:center}
+.history-leg-cell{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;font-variant-numeric:tabular-nums}
+.history-leg-winner{display:inline-block;flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#35d06f;box-shadow:0 0 5px rgba(53,208,111,.45)}
 .history-detail th:first-child,.history-detail td:first-child{width:54px;color:var(--muted)}
 .history-best-darts{font-size:12px;color:var(--muted);margin-top:3px}
 .toast{background:#2d4a3d;border-radius:10px;padding:10px;text-align:center;margin:8px 0;font-size:13px}
@@ -783,7 +786,7 @@ function renderHistory(){
   if(Number.isInteger(h.winner))g.wins[h.winner]++;
   (h.legs||[0,0]).forEach((v,i)=>{g.legs[i]+=Number(v)||0;});
   (h.stats||[]).forEach((v,i)=>{if(!v)return;g.stats[i].points+=Number(v.points)||0;g.stats[i].darts+=Number(v.darts)||0;g.stats[i].high=Math.max(g.stats[i].high,Number(v.high)||0);g.stats[i].visits+=Number(v.visits)||0;});
-  (h.legHistory||[]).forEach((leg,legIndex)=>g.detailLegs.push({gameNo:Number(h.gameNo)||1,legNo:legIndex+1,stats:leg.stats||[]}));
+  (h.legHistory||[]).forEach((leg,legIndex)=>g.detailLegs.push({gameNo:Number(h.gameNo)||1,legNo:legIndex+1,winner:Number.isInteger(leg.winner)?leg.winner:null,stats:leg.stats||[]}));
  });
  const newestFirst=Array.from(groups.values()).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
  const bestByPlayer=new Map();
@@ -799,7 +802,7 @@ function renderHistory(){
   const outcome=g.wins[0]===g.wins[1]?'Seeria jäi viiki':`${esc(g.names[g.wins[0]>g.wins[1]?0:1])} võitis seeria`;
   const indices=g.indices.join(',');
   const orderedLegs=g.detailLegs.sort((a,b)=>a.gameNo-b.gameNo||a.legNo-b.legNo);
-  const detailRows=orderedLegs.map((leg,i)=>`<tr><td>Leg ${i+1}</td>${[0,1].map(player=>{const st=leg.stats[player];return `<td>${st&&Number(st.darts)>0?`${avg(st)} (${Number(st.darts)})`:'–'}</td>`;}).join('')}</tr>`).join('');
+  const detailRows=orderedLegs.map((leg,i)=>`<tr><td>Leg ${i+1}</td>${[0,1].map(player=>{const st=leg.stats[player];const value=st&&Number(st.darts)>0?`${avg(st)} (${Number(st.darts)})`:'–';return `<td><span class="history-leg-cell">${value}${leg.winner===player?'<span class="history-leg-winner" title="Legi võitja" aria-label="Legi võitja"></span>':''}</span></td>`;}).join('')}</tr>`).join('');
   const detailHtml=`<div class="history-detail hidden" id="historyDetail${groupIndex}"><table><thead><tr><th>Leg</th><th>${esc(g.names[0])}</th><th>${esc(g.names[1])}</th></tr></thead><tbody>${detailRows||'<tr><td colspan="3">Legide detailid puuduvad</td></tr>'}</tbody></table></div>`;
   return `<div class="historyitem"><div class="history-series-card" role="button" tabindex="0" aria-expanded="false" data-toggle-detail="${groupIndex}"><b>${outcome}</b> · ${esc(g.names[0])} ${score} ${esc(g.names[1])}<div class="muted small" style="margin-top:5px">${count} mängu · ${new Date(g.date).toLocaleString('et-EE')}</div><div class="muted small" style="margin-top:3px">Legid kokku: ${g.legs[0]} : ${g.legs[1]}</div><div class="history-avg-grid"><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[0])}</div><div class="history-avg-value">${avg(g.stats[0])}</div></div><div class="history-avg-player"><div class="history-avg-name">${esc(g.names[1])}</div><div class="history-avg-value">${avg(g.stats[1])}</div></div></div><div class="muted small" style="margin-top:8px">Vajuta detailide avamiseks</div></div>${detailHtml}<button class="secondary danger" data-delete-series="${indices}" style="width:100%;margin-top:10px">KUSTUTA SEERIA</button></div>`;
  }).join(''):'Ajaloos pole veel mänge.';
