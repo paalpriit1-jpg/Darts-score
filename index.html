@@ -625,7 +625,7 @@ body.setup-fixed #setup button,body.setup-fixed #setup input{touch-action:manipu
 <button class="secondary" id="backSetup" style="width:100%;margin:0 0 12px">↶ TAGASI</button>
 <div class="panel" id="historyList"></div>
 </main>
-<footer>Versioon 96 · Ajalugu sünkroonitakse Supabase’iga.</footer>
+<footer>Versioon 100 · Ajalugu sünkroonitakse Supabase’iga.</footer>
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
@@ -828,7 +828,7 @@ window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120))
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 98`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 100`;
  $('players').innerHTML='';
  S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`<span class="player-leg-high" title="Selle legi suurim viskevoor">${S.legStats[i].high||0}</span><span class="player-series-high" title="Kogu mänguseeria suurim viskevoor">${S.seriesStats?.[i]?.high||0}</span><div class="playername">${esc(name)}</div><div class="score">${S.score[i]}${S.legStarter===i?'<span class="player-starter-dot" title="Alustas legi" aria-label="Alustas legi"></span>':''}</div><div class="meta player-stats"><div class="stat-row"><span>LEGI AVG</span><span class="stat-value">${avg(S.legStats[i])}</span></div><div class="stat-row"><span>MÄNGU AVG</span><span class="stat-value">${avg(S.seriesStats?.[i]||stat())}</span></div><div class="stat-row"><span>LEGI NOOLED</span><span class="stat-value">${S.legStats[i].darts}</span></div><div class="setleg-inline"><span class="stat-label">SETS</span><span class="stat-value">${S.seriesWins[i]}</span><span class="stat-label">LEGS</span><span class="stat-value">${S.legs[i]}</span></div></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);
   // Kaardi puudutus kinnitab jäägi kohe pointerdown sündmusel, ilma click-viivituseta.
@@ -1072,15 +1072,21 @@ async function loadCloudHistory(){
    // sest seda ei saa ohutult konkreetse pilvekirjega siduda.
    return true;
   });
-  const localBySeries=new Map(persistent.filter(x=>x.seriesId).map(x=>[x.seriesId,x]));
+  // Iga seeria võib sisaldada mitut mängu. Seo kirjed seriesId + gameNo järgi,
+  // mitte ainult seriesId järgi, muidu kirjutavad sama seeria mängud üksteise üle.
+  const gameKey=record=>record&&record.seriesId
+   ? `${record.seriesId}::${Number(record.gameNo)||1}`
+   : null;
+  const localByGame=new Map(persistent.filter(x=>x.seriesId).map(x=>[gameKey(x),x]));
   remote.forEach(record=>{
-   const local=record.seriesId?localBySeries.get(record.seriesId):null;
+   const key=gameKey(record);
+   const local=key?localByGame.get(key):null;
    if(local){
     local.cloudId=record.cloudId||local.cloudId;
     local.cloudSaved=true;
    }else{
     persistent.push(record);
-    if(record.seriesId)localBySeries.set(record.seriesId,record);
+    if(key)localByGame.set(key,record);
    }
   });
   persistent.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
