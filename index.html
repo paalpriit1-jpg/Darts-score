@@ -621,7 +621,7 @@ body.setup-fixed #setup button,body.setup-fixed #setup input{touch-action:manipu
 <button class="secondary" id="backSetup" style="width:100%;margin:0 0 12px">↶ TAGASI</button>
 <div class="panel" id="historyList"></div>
 </main>
-<footer>Versioon 94 · Ajalugu sünkroonitakse Supabase’iga.</footer>
+<footer>Versioon 95 · Ajalugu sünkroonitakse Supabase’iga.</footer>
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
@@ -1053,12 +1053,20 @@ async function loadCloudHistory(){
    records.forEach(record=>{if(record&&record.names&&record.stats)remote.push({...record,cloudId:row.id,date:record.date||row.created_at||record.created_at});});
   });
   const remoteSeriesIds=new Set(remote.map(record=>record.seriesId).filter(Boolean));
-  // Eemalda teisest telefonist kohalikud pilvekirjed, mis on omaniku telefonist juba kustutatud.
+  const remoteCloudIds=new Set(cloudRows.map(row=>row.id).filter(Boolean));
+  // Eemalda kohalikust ajaloost pilvega seotud kirjed, mida pilves enam pole.
+  // Vanematel kirjetel võib seriesId puududa; cloudSaved märge näitab siiski,
+  // et need saadeti varem ühisesse ajalukku. Kui pilv on tühi, eemaldame needki.
   // Pilvega sidumata kohalikke kirjeid ei kustuta.
   persistent=persistent.filter(record=>{
-   if(!record.seriesId)return true;
-   if(!(record.cloudSaved||record.cloudId))return true;
-   return remoteSeriesIds.has(record.seriesId);
+   const wasCloudRecord=!!(record.cloudSaved||record.cloudId);
+   if(!wasCloudRecord)return true;
+   if(record.cloudId)return remoteCloudIds.has(record.cloudId);
+   if(record.seriesId)return remoteSeriesIds.has(record.seriesId);
+   if(cloudRows.length===0)return false;
+   // Vana pilvekirje ilma ID ja seriesId-ta: säilita, kui pilves on muid kirjeid,
+   // sest seda ei saa ohutult konkreetse pilvekirjega siduda.
+   return true;
   });
   const localBySeries=new Map(persistent.filter(x=>x.seriesId).map(x=>[x.seriesId,x]));
   remote.forEach(record=>{
