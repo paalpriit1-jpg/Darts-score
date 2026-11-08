@@ -621,7 +621,7 @@ body.setup-fixed #setup button,body.setup-fixed #setup input{touch-action:manipu
 <button class="secondary" id="backSetup" style="width:100%;margin:0 0 12px">↶ TAGASI</button>
 <div class="panel" id="historyList"></div>
 </main>
-<footer>Versioon 92 · Ajalugu sünkroonitakse Supabase’iga.</footer>
+<footer>Versioon 93 · Ajalugu sünkroonitakse Supabase’iga.</footer>
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
@@ -823,7 +823,7 @@ window.addEventListener('orientationchange',()=>setTimeout(fitGameToScreen,120))
 if(window.visualViewport)window.visualViewport.addEventListener('resize',()=>requestAnimationFrame(fitGameToScreen));
 function render(){
  $('gameLabel').textContent=`MÄNG ${S.gameNo} / ${S.total}`;
- $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 92`;
+ $('formatLabel').textContent=`${cfg.start} · ${cfg.legs} LEGI VÕIDUNI · ${cfg.out==='double'?'DOUBLE OUT':'STRAIGHT OUT'} · VERSIOON 93`;
  $('players').innerHTML='';
  S.names.forEach((name,i)=>{let d=document.createElement('div');d.className='player'+(S.turn===i?' active':'');let recent=(S.visitHistory?.[i]||[]).slice(-5);d.innerHTML=`${S.legStarter===i?'<span class="player-starter-dot" title="Alustas legi" aria-label="Alustas legi"></span>':''}<span class="player-leg-high" title="Selle legi suurim viskevoor">${S.legStats[i].high||0}</span><div class="playername">${esc(name)}</div><div class="score">${S.score[i]}</div><div class="meta player-stats"><div class="stat-row"><span>LEGI AVG</span><span class="stat-value">${avg(S.legStats[i])}</span></div><div class="stat-row"><span>MÄNGU AVG</span><span class="stat-value">${avg(S.seriesStats?.[i]||stat())}</span></div><div class="stat-row"><span>LEGI NOOLED</span><span class="stat-value">${S.legStats[i].darts}</span></div><div class="setleg-inline"><span class="stat-label">SETS</span><span class="stat-value">${S.seriesWins[i]}</span><span class="stat-label">LEGS</span><span class="stat-value">${S.legs[i]}</span></div></div><div class="last-visits" aria-label="Viimased viis visketulemust">${Array.from({length:5},(_,j)=>{let value=recent[j]??'–';return `<span class="${value==='BUST'?'bust':''}">${value}</span>`;}).join('')}</div>`;$('players').appendChild(d);
   // Kaardi puudutus kinnitab jäägi kohe pointerdown sündmusel, ilma click-viivituseta.
@@ -1051,8 +1051,18 @@ async function loadCloudHistory(){
    const records=Array.isArray(payload.records)?payload.records:(payload.series?payload.series:[payload]);
    records.forEach(record=>{if(record&&record.names&&record.stats)remote.push({...record,cloudId:row.id,date:record.date||row.created_at||record.created_at});});
   });
-  const known=new Set(persistent.map(x=>x.seriesId).filter(Boolean));
-  remote.forEach(record=>{if(!record.seriesId||!known.has(record.seriesId)){persistent.push(record);if(record.seriesId)known.add(record.seriesId);}});
+  const localBySeries=new Map(persistent.filter(x=>x.seriesId).map(x=>[x.seriesId,x]));
+  remote.forEach(record=>{
+   const local=record.seriesId?localBySeries.get(record.seriesId):null;
+   if(local){
+    // Kohalik kirje võib olla vanem ja cloudId-ta. Seo see pilvekirjega, et kustutamine jõuaks baasi.
+    local.cloudId=record.cloudId||local.cloudId;
+    local.cloudSaved=true;
+   }else{
+    persistent.push(record);
+    if(record.seriesId)localBySeries.set(record.seriesId,record);
+   }
+  });
   persistent.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
   save();
   status.textContent=`Ühine ajalugu ühendatud · ${cloudRows.length} kirjet`;
@@ -1069,8 +1079,19 @@ async function uploadCompletedSeries(records){
  }
  save();
 }
-async function deleteCloudRows(ids){
+async function deleteCloudRowsForRecords(records){
+ // Küsi kustutamise hetkel värske pilveajalugu: kohalikel kirjetel võib cloudId puududa.
+ const latest=await cloudRequest({action:'list'});
+ const rows=Array.isArray(latest.matches)?latest.matches:[];
+ const wanted=new Set(records.map(record=>record.seriesId).filter(Boolean));
+ const ids=new Set(records.map(record=>record.cloudId).filter(Boolean));
+ rows.forEach(row=>{
+  const payload=row.match_data||{};
+  const rowRecords=Array.isArray(payload.records)?payload.records:(Array.isArray(payload.series)?payload.series:[payload]);
+  if(rowRecords.some(record=>record&&record.seriesId&&wanted.has(record.seriesId)))ids.add(row.id);
+ });
  for(const id of ids){await cloudRequest({action:'delete',id},true);}
+ return ids.size;
 }
 
 function renderHistory(){
@@ -1169,8 +1190,7 @@ function renderHistory(){
   if(!indices.length)return;
   if(!confirm('Kas kustutan kogu selle mänguseeria ajaloo?'))return;
   const selected=indices.map(index=>persistent[index]).filter(Boolean);
-  const cloudIds=selected.map(item=>item.cloudId).filter(Boolean);
-  if(cloudIds.length){try{await deleteCloudRows(cloudIds);}catch(error){alert('Ühisest ajaloost kustutamine ebaõnnestus: '+error.message);return;}}
+  try{await deleteCloudRowsForRecords(selected);}catch(error){alert('Ühisest ajaloost kustutamine ebaõnnestus: '+error.message);return;}
   indices.sort((a,b)=>b-a).forEach(index=>{if(index>=0&&index<persistent.length)persistent.splice(index,1);});
   save();renderHistory();$('historyPreview').textContent=persistent.length?`${new Set(persistent.map((h,i)=>h.seriesId||`legacy-${i}`)).size} salvestatud seeriat.`:'Mänge pole veel salvestatud.';
  }));
