@@ -73,7 +73,7 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 .history-detail th{font-size:12px;color:#dce7ef;overflow-wrap:anywhere}
 .history-detail td{font-size:14px}
 .history-detail td:not(:first-child){white-space:nowrap;text-align:center}
-.history-leg-cell{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:0;font-variant-numeric:tabular-nums}
+.history-leg-cell{display:grid;grid-template-columns:8px minmax(0,1fr) 8px;align-items:center;justify-items:center;gap:0;width:100%;min-width:0;font-variant-numeric:tabular-nums}
 .history-leg-winner{display:inline-block;flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#35d06f;box-shadow:0 0 5px rgba(53,208,111,.45)}
 .history-detail th:first-child,.history-detail td:first-child{width:54px;color:var(--muted)}
 .history-best-darts{font-size:12px;color:var(--muted);margin-top:3px}
@@ -82,7 +82,8 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 .history-game-detail>.history-avg-grid .history-avg-player{padding:8px}
 .history-best-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:7px;font-size:12px;color:var(--muted);text-align:left}
 .history-best-row strong{font-size:16px;line-height:1.2;color:#fff;font-weight:800;font-variant-numeric:tabular-nums}
-.history-best-leg-dot{display:inline-block;width:8px;height:8px;flex:0 0 8px;border-radius:50%;background:#299bff;box-shadow:0 0 5px rgba(41,155,255,.55);vertical-align:middle;margin-right:6px}
+.history-best-leg-dot{display:block;width:8px;height:8px;border-radius:50%;background:#299bff;box-shadow:0 0 5px rgba(41,155,255,.55)}
+.history-leg-dot-placeholder{display:block;width:8px;height:8px;visibility:hidden}
 .toast{background:#2d4a3d;border-radius:10px;padding:10px;text-align:center;margin:8px 0;font-size:13px}
 footer{color:#7890a3;font-size:10px;text-align:center;margin:20px 0}
 @media(min-width:500px){.app{padding-top:28px}.score{font-size:52px}}
@@ -631,7 +632,7 @@ body.setup-fixed #setup button,body.setup-fixed #setup input{touch-action:manipu
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
-const APP_VERSION=104;
+const APP_VERSION=105;
 const $=id=>document.getElementById(id);
 let cfg={legs:3,start:501,out:'double'};
 let S=null, entry='', undoState=null, undoStack=[], redoStack=[], holdTimer=null, holdFired=false;
@@ -1191,7 +1192,7 @@ function renderHistory(){
   const orderedItems=[...g.items].sort((a,b)=>(Number(a.gameNo)||1)-(Number(b.gameNo)||1));
   const allLegs=orderedItems.flatMap(item=>(item.legHistory||[]).map(leg=>({winner:leg.winner,stats:leg.stats||[]})));
   const bestLegAvg=[0,1].map(player=>allLegs.reduce((best,leg)=>{const st=leg.stats?.[player];if(!st||Number(st.darts)<=0)return best;const value=Number(avg(st));return best===null||value>best?value:best;},null));
-  const detailRows=allLegs.map((leg,legIndex)=>`<tr><td>Leg ${legIndex+1}</td>${[0,1].map(player=>{const st=leg.stats?.[player];const numericAvg=st&&Number(st.darts)>0?Number(avg(st)):null;const value=numericAvg!==null?`${avg(st)} (${Number(st.darts)})`:'–';const isBest=numericAvg!==null&&bestLegAvg[player]!==null&&Math.abs(numericAvg-bestLegAvg[player])<0.005;return `<td><span class="history-leg-cell">${isBest?'<span class="history-best-leg-dot" title="Mängija parim leg" aria-label="Mängija parim leg"></span>':''}${value}${leg.winner===player?'<span class="history-leg-winner" title="Legi võitja" aria-label="Legi võitja"></span>':''}</span></td>`;}).join('')}</tr>`).join('');
+  const detailRows=allLegs.map((leg,legIndex)=>`<tr><td>Leg ${legIndex+1}</td>${[0,1].map(player=>{const st=leg.stats?.[player];const numericAvg=st&&Number(st.darts)>0?Number(avg(st)):null;const value=numericAvg!==null?`${avg(st)} (${Number(st.darts)})`:'–';const isBest=numericAvg!==null&&bestLegAvg[player]!==null&&Math.abs(numericAvg-bestLegAvg[player])<0.005;return `<td><span class="history-leg-cell">${isBest?'<span class="history-best-leg-dot" title="Mängija parim leg" aria-label="Mängija parim leg"></span>':'<span class="history-leg-dot-placeholder" aria-hidden="true"></span>'}<span>${value}</span>${leg.winner===player?'<span class="history-leg-winner" title="Legi võitja" aria-label="Legi võitja"></span>':'<span class="history-leg-dot-placeholder" aria-hidden="true"></span>'}</span></td>`;}).join('')}</tr>`).join('');
   const categories=['100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
   const playerStats=[0,1].map(player=>{
    const scores=orderedItems.flatMap(item=>(item.visitScores?.[player]||[]).map(Number)).filter(Number.isFinite);
