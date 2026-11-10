@@ -72,13 +72,12 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 .history-detail th,.history-detail td{padding:9px 5px;border-bottom:1px solid #34495a}
 .history-detail th{font-size:12px;color:#dce7ef;overflow-wrap:anywhere}
 .history-detail td{font-size:14px}
-.history-leg-average{cursor:pointer}.history-leg-average:focus{outline:1px solid #8fa6b8;outline-offset:-2px;border-radius:5px}.history-leg-visits-row>td{padding:0!important;border-bottom:0!important}.history-leg-visits{padding:7px 0 10px}.history-leg-visits table{margin:0!important;background:#101d28;border-radius:7px;overflow:hidden}.history-leg-visits th,.history-leg-visits td{padding:6px 5px!important;font-size:12px!important}.history-leg-visits th:first-child,.history-leg-visits td:first-child{width:30px!important;color:var(--muted)}.history-game-detail+.history-game-detail{margin-top:13px;padding-top:11px;border-top:1px solid #405466}
+.history-leg-average{cursor:pointer}.history-leg-average:focus{outline:1px solid #8fa6b8;outline-offset:-2px;border-radius:5px}.history-leg-visits-row>td{padding:0!important;border-bottom:0!important}.history-leg-visits{padding:7px 0 10px}.history-leg-visits table{margin:0!important;background:#101d28;border-radius:7px;overflow:hidden}.history-leg-visits th,.history-leg-visits td{padding:6px 5px!important;font-size:12px!important}.history-leg-visits th:first-child,.history-leg-visits td:first-child{width:30px!important;color:var(--muted)}.history-game-detail+.history-game-detail{margin-top:5px;padding-top:5px;border-top:1px solid #405466}
 .history-detail td:not(:first-child){white-space:nowrap;text-align:center}
 .history-leg-cell{display:grid;grid-template-columns:8px minmax(0,1fr) 8px;align-items:center;justify-items:center;gap:0;width:100%;min-width:0;font-variant-numeric:tabular-nums}
 .history-leg-winner{display:inline-block;flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#35d06f;box-shadow:0 0 5px rgba(53,208,111,.45)}
 .history-detail th:first-child,.history-detail td:first-child{width:54px;color:var(--muted)}
 .history-best-darts{font-size:12px;color:var(--muted);margin-top:3px}
-.history-detail .history-game-detail+.history-game-detail{margin-top:18px;padding-top:14px;border-top:1px solid #405466}
 .history-game-detail>table{margin-top:7px}
 .history-game-detail>.history-avg-grid .history-avg-player{padding:8px}
 .history-best-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:7px;font-size:12px;color:var(--muted);text-align:left}
@@ -633,7 +632,7 @@ body.setup-fixed #setup button,body.setup-fixed #setup input{touch-action:manipu
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
-const APP_VERSION=107;
+const APP_VERSION=108;
 const $=id=>document.getElementById(id);
 let cfg={legs:3,start:501,out:'double'};
 let S=null, entry='', undoState=null, undoStack=[], redoStack=[], holdTimer=null, holdFired=false;
@@ -1211,7 +1210,7 @@ function renderHistory(){
     const visitsTable=`<div class="history-leg-visits hidden" id="legVisits${visitId}"><table><thead><tr><th></th><th>${esc(g.names[0])}</th><th>${esc(g.names[1])}</th></tr></thead><tbody>${visitRows}</tbody></table></div>`;
     return `<tr><td>Leg ${leg.legNo}</td>${cells}</tr><tr class="history-leg-visits-row"><td colspan="3">${visitsTable}</td></tr>`;
    }).join('');
-   return `<section class="history-game-detail"><div class="muted small" style="margin:2px 0 5px">MÄNG ${Number(item.gameNo)||itemIndex+1}</div><table><thead><tr><th>Leg</th><th>${esc(g.names[0])}</th><th>${esc(g.names[1])}</th></tr></thead><tbody>${rows||'<tr><td colspan="3">Legide detailid puuduvad</td></tr>'}</tbody></table></section>`;
+   return `<section class="history-game-detail"><table><thead><tr><th>Leg</th><th>${esc(g.names[0])}</th><th>${esc(g.names[1])}</th></tr></thead><tbody>${rows||'<tr><td colspan="3">Legide detailid puuduvad</td></tr>'}</tbody></table></section>`;
   }).join('');
   const categories=['100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
   const playerStats=[0,1].map(player=>{
