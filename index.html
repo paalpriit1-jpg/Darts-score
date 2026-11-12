@@ -632,7 +632,7 @@ body.setup-fixed #setup button,body.setup-fixed #setup input{touch-action:manipu
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
-const APP_VERSION=108;
+const APP_VERSION=109;
 const $=id=>document.getElementById(id);
 let cfg={legs:3,start:501,out:'double'};
 let S=null, entry='', undoState=null, undoStack=[], redoStack=[], holdTimer=null, holdFired=false;
@@ -977,7 +977,7 @@ function finishByDarts(n){
  finishLeg(i,n);
 }
 function finishLeg(winner,darts){
- S.legs[winner]++;S.legHistory.push({winner,stats:S.legStats.map(x=>({...x})),visitScores:(S.legVisitScores||[[],[]]).map(x=>[...(x||[])])});
+ S.legs[winner]++;S.legHistory.push({winner,checkoutDarts:darts,stats:S.legStats.map(x=>({...x})),visitScores:(S.legVisitScores||[[],[]]).map(x=>[...(x||[])])});
  if(S.legs[winner]>=cfg.legs){finishMatch(winner);return;}
  S.score=[cfg.start,cfg.start];S.legStats=[stat(),stat()];S.legVisitScores=[[],[]];S.visitHistory=[[],[]];S.legStarter=1-(S.legStarter??0);S.turn=S.legStarter;undoState=undoStack[undoStack.length-1]||null;render();maybeStartBotTurn();
 }
@@ -1193,7 +1193,7 @@ function renderHistory(){
   const allLegs=orderedItems.flatMap(item=>(item.legHistory||[]).map((leg,legIndex)=>({gameNo:Number(item.gameNo)||1,legNo:legIndex+1,winner:leg.winner,stats:leg.stats||[],visitScores:leg.visitScores||null})));
   const bestLegAvg=[0,1].map(player=>allLegs.reduce((best,leg)=>{const st=leg.stats?.[player];if(!st||Number(st.darts)<=0)return best;const value=Number(avg(st));return best===null||value>best?value:best;},null));
   const gameDetailBlocks=orderedItems.map((item,itemIndex)=>{
-   const itemLegs=(item.legHistory||[]).map((leg,legIndex)=>({gameNo:Number(item.gameNo)||itemIndex+1,legNo:legIndex+1,winner:leg.winner,stats:leg.stats||[],visitScores:leg.visitScores||null}));
+   const itemLegs=(item.legHistory||[]).map((leg,legIndex)=>({gameNo:Number(item.gameNo)||itemIndex+1,legNo:legIndex+1,winner:leg.winner,checkoutDarts:Number(leg.checkoutDarts)||null,stats:leg.stats||[],visitScores:leg.visitScores||null}));
    const rows=itemLegs.map((leg,legIndex)=>{
     const visitId=`${groupIndex}-${itemIndex}-${legIndex}`;
     const cells=[0,1].map(player=>{
@@ -1205,7 +1205,7 @@ function renderHistory(){
     let visitRows='';
     if(Array.isArray(scores)&&scores.some(list=>Array.isArray(list)&&list.length)){
      const max=Math.max(scores[0]?.length||0,scores[1]?.length||0);
-     visitRows=Array.from({length:max},(_,n)=>`<tr><td>${n+1}</td><td>${scores[0]?.[n]??'–'}</td><td>${scores[1]?.[n]??'–'}</td></tr>`).join('');
+     visitRows=Array.from({length:max},(_,n)=>{const scoreCell=player=>{const score=scores[player]?.[n]??'–';const isCheckout=leg.winner===player&&n===(scores[player]?.length||0)-1&&Number.isInteger(leg.checkoutDarts)&&leg.checkoutDarts>=1&&leg.checkoutDarts<=3;return `<span class="history-leg-visit-score">${score}${isCheckout?` (${leg.checkoutDarts})`:''}</span>`;};return `<tr><td>${n+1}</td><td>${scoreCell(0)}</td><td>${scoreCell(1)}</td></tr>`;}).join('');
     }else visitRows='<tr><td colspan="3" class="muted">Selle legi viskeajalugu pole salvestatud</td></tr>';
     const visitsTable=`<div class="history-leg-visits hidden" id="legVisits${visitId}"><table><thead><tr><th></th><th>${esc(g.names[0])}</th><th>${esc(g.names[1])}</th></tr></thead><tbody>${visitRows}</tbody></table></div>`;
     return `<tr><td>Leg ${leg.legNo}</td>${cells}</tr><tr class="history-leg-visits-row"><td colspan="3">${visitsTable}</td></tr>`;
