@@ -634,7 +634,7 @@ body.setup-fixed #setup button,body.setup-fixed #setup input{touch-action:manipu
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
-const APP_VERSION=110;
+const APP_VERSION=111;
 const $=id=>document.getElementById(id);
 let cfg={legs:3,start:501,out:'double'};
 let S=null, entry='', undoState=null, undoStack=[], redoStack=[], holdTimer=null, holdFired=false;
@@ -980,7 +980,7 @@ function finishByDarts(n){
  finishLeg(i,n);
 }
 function showLegWinPopup(winner){
- const totalDarts=(S.legStats||[]).reduce((sum,playerStat)=>sum+(Number(playerStat?.darts)||0),0);
+ const totalDarts=Number(S.legStats?.[winner]?.darts)||0;
  const popup=$('legWinPopup');
  $('legWinPopupName').textContent=S.names[winner]||'';
  $('legWinPopupDarts').textContent=String(totalDarts);
