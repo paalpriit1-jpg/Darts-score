@@ -634,7 +634,7 @@ body.setup-fixed #setup button,body.setup-fixed #setup input{touch-action:manipu
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
-const APP_VERSION=111;
+const APP_VERSION=112;
 const $=id=>document.getElementById(id);
 let cfg={legs:3,start:501,out:'double'};
 let S=null, entry='', undoState=null, undoStack=[], redoStack=[], holdTimer=null, holdFired=false;
@@ -1175,7 +1175,9 @@ function renderHistory(){
   const visitCounts={};
   scores.forEach(score=>{
    let key=null;
-   if(score>=100&&score<=119)key='100+';
+   if(score>=60&&score<=79)key='60+';
+   else if(score>=80&&score<=99)key='80+';
+   else if(score>=100&&score<=119)key='100+';
    else if(score>=120&&score<=139)key='120+';
    else if(score>=140&&score<=159)key='140+';
    else if(score>=160&&score<=169)key='160+';
@@ -1201,7 +1203,7 @@ function renderHistory(){
    if(value>bestHistoryAvg){bestHistoryAvg=value;bestHistoryTargetIndex=index;}
   });
  });
- const recordOrder=['100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
+ const recordOrder=['60+','80+','100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
  const bestHtml=bestByPlayer.size?`<section class="historyitem" style="margin-bottom:14px"><b>MÄNGIJATE PARIM MÄNGU AVG</b><div class="history-avg-grid" style="margin-top:10px">${Array.from(bestByPlayer.entries()).map(([name,best],playerIndex)=>{const rows=recordOrder.filter(key=>(best.visitCounts[key]||0)>0).map(key=>`<div class="history-record-stats-row"><span>${key}</span><strong>${best.visitCounts[key]}</strong></div>`).join('');return `<div class="history-avg-player history-record-card" role="button" tabindex="0" aria-expanded="false" data-toggle-record="${playerIndex}"><div class="history-avg-name">${esc(name)}</div><div class="history-best-row"><span>AVG</span><strong>${best.display}</strong></div><div class="history-best-row"><span>LEG</span><strong>${best.bestLeg?best.bestLeg.display:'–'}</strong></div><div class="history-best-row"><span>NOOLED</span><strong>${Number.isFinite(best.minDarts)?best.minDarts:'–'}</strong></div><div class="history-record-stats hidden" id="historyRecordStats${playerIndex}"><div class="history-record-stats-row"><span>PARIM LÕPP</span><strong>${best.bestFinish||'–'}</strong></div>${rows}<button type="button" class="secondary go-best-game-small" data-go-best-game style="display:block;width:auto;max-width:100%;min-height:28px;padding:4px 9px;margin:8px auto 2px;font-size:11px;line-height:1.1">PARIM MÄNG</button></div></div>`;}).join('')}</div><div class="muted small" style="margin-top:7px">Vajuta mängija ruudule visketulemuste statistika avamiseks</div></section>`:'';
  const gamesHtml=newestFirst.length?newestFirst.map((g,groupIndex)=>{
   const count=g.items.length;const score=`${g.wins[0]} : ${g.wins[1]}`;
@@ -1230,17 +1232,17 @@ function renderHistory(){
    }).join('');
    return `<section class="history-game-detail"><table><thead><tr><th>Leg</th><th>${esc(g.names[0])}</th><th>${esc(g.names[1])}</th></tr></thead><tbody>${rows||'<tr><td colspan="3">Legide detailid puuduvad</td></tr>'}</tbody></table></section>`;
   }).join('');
-  const categories=['100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
+  const categories=['60+','80+','100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
   const playerStats=[0,1].map(player=>{
    const scores=orderedItems.flatMap(item=>(item.visitScores?.[player]||[]).map(Number)).filter(Number.isFinite);
    const counts={};
-   scores.forEach(score=>{let key=null;if(score>=100&&score<=119)key='100+';else if(score>=120&&score<=139)key='120+';else if(score>=140&&score<=159)key='140+';else if(score>=160&&score<=169)key='160+';else if(Number.isInteger(score)&&score>=170&&score<=180)key=String(score);if(key)counts[key]=(counts[key]||0)+1;});
+   scores.forEach(score=>{let key=null;if(score>=60&&score<=79)key='60+';else if(score>=80&&score<=99)key='80+';else if(score>=100&&score<=119)key='100+';else if(score>=120&&score<=139)key='120+';else if(score>=140&&score<=159)key='140+';else if(score>=160&&score<=169)key='160+';else if(Number.isInteger(score)&&score>=170&&score<=180)key=String(score);if(key)counts[key]=(counts[key]||0)+1;});
    const rows=categories.filter(key=>(counts[key]||0)>0).map(key=>`<div class="history-record-stats-row"><span>${key}</span><strong>${counts[key]}</strong></div>`).join('');
    const bestFinish=orderedItems.reduce((best,item)=>Math.max(best,Number(item.bestFinish?.[player])||0),0);
    const bestRow=bestFinish?`<div class="history-record-stats-row"><span>PARIM LÕPP</span><strong>${bestFinish}</strong></div>`:'';
    return `<div class="history-avg-player"><div class="history-avg-name">${esc(g.names[player]||`Mängija ${player+1}`)}</div><div class="history-record-stats">${bestRow}${rows||(!bestRow?'<div class="muted small">Statistika puudub</div>':'')}</div></div>`;
   });
-  const statsHtml=playerStats.some((_,player)=>orderedItems.some(item=>Number(item.bestFinish?.[player])>0||(item.visitScores?.[player]||[]).some(score=>Number(score)>=100)))?`<div class="history-avg-grid" style="margin-top:10px">${playerStats.join('')}</div>`:'';
+  const statsHtml=playerStats.some((_,player)=>orderedItems.some(item=>Number(item.bestFinish?.[player])>0||(item.visitScores?.[player]||[]).some(score=>Number(score)>=60)))?`<div class="history-avg-grid" style="margin-top:10px">${playerStats.join('')}</div>`:'';
   const detailContent=`${gameDetailBlocks}<div class="muted small" style="margin-top:10px;margin-bottom:4px">KOGU SEERIA VISKETULEMUSTE STATISTIKA</div>${statsHtml}`;
   const detailHtml=`<div class="history-detail hidden" id="historyDetail${groupIndex}">${detailContent}</div>`;
   return `<div class="historyitem"${groupIndex===bestHistoryTargetIndex?' id="historyBestGame"':''}><div class="history-series-card" role="button" tabindex="0" aria-expanded="false" data-toggle-detail="${groupIndex}"><b>${outcome}</b> · ${esc(g.names[0])} ${score} ${esc(g.names[1])}<div class="muted small" style="margin-top:5px">${count} setti · ${new Date(g.date).toLocaleString('et-EE')}</div><div class="muted small" style="margin-top:3px">Setid kokku: ${g.items.length} · Legid: ${g.legs[0]} : ${g.legs[1]}</div><div class="history-avg-grid">${[0,1].map(player=>{const playerBest=bestByPlayer.get(g.names[player]);const currentAvg=Number(avg(g.stats[player]));const isPersonalBest=!g.isBotGame&&playerBest&&playerBest.value>0&&Number(g.stats[player].darts)>0&&Math.abs(currentAvg-playerBest.value)<0.005;return `<div class="history-avg-player" role="button" tabindex="0" aria-label="Ava ${esc(g.names[player])} legide ajalugu" data-open-leg-history="${groupIndex}"><div class="history-avg-name">${esc(g.names[player])}</div><div class="history-avg-value${isPersonalBest?' personal-best':''}">${avg(g.stats[player])}</div></div>`;}).join('')}</div><div class="muted small" style="margin-top:8px">Vajuta legi keskmise peale selle legi visete vaatamiseks</div></div>${detailHtml}${ownerEnabled()?`<button class="secondary danger" data-delete-series="${indices}" style="width:100%;margin-top:10px">KUSTUTA SEERIA</button>`:`<div class="muted small" style="margin-top:8px;text-align:center">Kustutamine ainult omaniku telefonis</div>`}</div>`;
