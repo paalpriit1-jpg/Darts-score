@@ -56,6 +56,10 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 .historyitem{padding:14px 0;border-bottom:1px solid #34495a}
 .history-avg-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
 .history-avg-player{background:#142330;border:1px solid #405466;border-radius:11px;padding:10px;min-width:0;text-align:center}
+.history-record-card{position:relative;padding-top:22px!important}
+.history-player-count{position:absolute;top:6px;font-size:11px;line-height:1;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.history-player-count.left{left:9px}
+.history-player-count.right{right:9px}
 .history-record-card{cursor:pointer;touch-action:manipulation}
 .history-record-card:focus{outline:2px solid #8fa6b8;outline-offset:2px}
 .history-record-stats{margin-top:9px;padding-top:8px;border-top:1px solid #405466;text-align:left}
@@ -634,7 +638,7 @@ body.setup-fixed #setup button,body.setup-fixed #setup input{touch-action:manipu
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
-const APP_VERSION=112;
+const APP_VERSION=113;
 const $=id=>document.getElementById(id);
 let cfg={legs:3,start:501,out:'double'};
 let S=null, entry='', undoState=null, undoStack=[], redoStack=[], holdTimer=null, holdFired=false;
@@ -1171,6 +1175,8 @@ function renderHistory(){
    return !best||legAvg>best.value?{value:legAvg,display:avg(st)}:best;
   },null);
   const bestFinish=(g.items||[]).reduce((best,item)=>Math.max(best,Number(item.bestFinish?.[i])||0),0);
+  const gamesPlayed=(g.items||[]).length;
+  const legsPlayed=(g.items||[]).reduce((total,item)=>total+((Array.isArray(item.legHistory)&&item.legHistory.length)?item.legHistory.length:((item.legs||[]).reduce((sum,n)=>sum+(Number(n)||0),0))),0);
   const scores=(g.items||[]).flatMap(item=>(item.visitScores?.[i]||[]).map(Number)).filter(Number.isFinite);
   const visitCounts={};
   scores.forEach(score=>{
@@ -1185,9 +1191,11 @@ function renderHistory(){
    if(key)visitCounts[key]=(visitCounts[key]||0)+1;
   });
   if(!current){
-   bestByPlayer.set(name,{value,display:avg(g.stats[i]),minDarts,bestLeg,bestFinish,visitCounts});
+   bestByPlayer.set(name,{value,display:avg(g.stats[i]),minDarts,bestLeg,bestFinish,visitCounts,gamesPlayed,legsPlayed});
   }else{
    if(value>current.value){current.value=value;current.display=avg(g.stats[i]);}
+   current.gamesPlayed=(current.gamesPlayed||0)+gamesPlayed;
+   current.legsPlayed=(current.legsPlayed||0)+legsPlayed;
    if(minDarts<current.minDarts)current.minDarts=minDarts;
    if(bestLeg&&(!current.bestLeg||bestLeg.value>current.bestLeg.value))current.bestLeg=bestLeg;
    current.bestFinish=Math.max(current.bestFinish||0,bestFinish);
@@ -1204,7 +1212,7 @@ function renderHistory(){
   });
  });
  const recordOrder=['60+','80+','100+','120+','140+','160+',...Array.from({length:11},(_,n)=>String(170+n))];
- const bestHtml=bestByPlayer.size?`<section class="historyitem" style="margin-bottom:14px"><b>MÄNGIJATE PARIM MÄNGU AVG</b><div class="history-avg-grid" style="margin-top:10px">${Array.from(bestByPlayer.entries()).map(([name,best],playerIndex)=>{const rows=recordOrder.filter(key=>(best.visitCounts[key]||0)>0).map(key=>`<div class="history-record-stats-row"><span>${key}</span><strong>${best.visitCounts[key]}</strong></div>`).join('');return `<div class="history-avg-player history-record-card" role="button" tabindex="0" aria-expanded="false" data-toggle-record="${playerIndex}"><div class="history-avg-name">${esc(name)}</div><div class="history-best-row"><span>AVG</span><strong>${best.display}</strong></div><div class="history-best-row"><span>LEG</span><strong>${best.bestLeg?best.bestLeg.display:'–'}</strong></div><div class="history-best-row"><span>NOOLED</span><strong>${Number.isFinite(best.minDarts)?best.minDarts:'–'}</strong></div><div class="history-record-stats hidden" id="historyRecordStats${playerIndex}"><div class="history-record-stats-row"><span>PARIM LÕPP</span><strong>${best.bestFinish||'–'}</strong></div>${rows}<button type="button" class="secondary go-best-game-small" data-go-best-game style="display:block;width:auto;max-width:100%;min-height:28px;padding:4px 9px;margin:8px auto 2px;font-size:11px;line-height:1.1">PARIM MÄNG</button></div></div>`;}).join('')}</div><div class="muted small" style="margin-top:7px">Vajuta mängija ruudule visketulemuste statistika avamiseks</div></section>`:'';
+ const bestHtml=bestByPlayer.size?`<section class="historyitem" style="margin-bottom:14px"><b>MÄNGIJATE PARIM MÄNGU AVG</b><div class="history-avg-grid" style="margin-top:10px">${Array.from(bestByPlayer.entries()).map(([name,best],playerIndex)=>{const rows=recordOrder.filter(key=>(best.visitCounts[key]||0)>0).map(key=>`<div class="history-record-stats-row"><span>${key}</span><strong>${best.visitCounts[key]}</strong></div>`).join('');return `<div class="history-avg-player history-record-card" role="button" tabindex="0" aria-expanded="false" data-toggle-record="${playerIndex}"><span class="history-player-count left">${best.gamesPlayed||0}</span><span class="history-player-count right">${best.legsPlayed||0}</span><div class="history-avg-name">${esc(name)}</div><div class="history-best-row"><span>AVG</span><strong>${best.display}</strong></div><div class="history-best-row"><span>LEG</span><strong>${best.bestLeg?best.bestLeg.display:'–'}</strong></div><div class="history-best-row"><span>NOOLED</span><strong>${Number.isFinite(best.minDarts)?best.minDarts:'–'}</strong></div><div class="history-record-stats hidden" id="historyRecordStats${playerIndex}"><div class="history-record-stats-row"><span>PARIM LÕPP</span><strong>${best.bestFinish||'–'}</strong></div>${rows}<button type="button" class="secondary go-best-game-small" data-go-best-game style="display:block;width:auto;max-width:100%;min-height:28px;padding:4px 9px;margin:8px auto 2px;font-size:11px;line-height:1.1">PARIM MÄNG</button></div></div>`;}).join('')}</div><div class="muted small" style="margin-top:7px">Vajuta mängija ruudule visketulemuste statistika avamiseks</div></section>`:'';
  const gamesHtml=newestFirst.length?newestFirst.map((g,groupIndex)=>{
   const count=g.items.length;const score=`${g.wins[0]} : ${g.wins[1]}`;
   const outcome=g.wins[0]===g.wins[1]?'Seeria jäi viiki':`${esc(g.names[g.wins[0]>g.wins[1]?0:1])} võitis seeria`;
