@@ -8,6 +8,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Darts Score">
 <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -95,6 +98,12 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 #historyScreen .history-detail td{font-size:16px}
 #historyScreen .history-leg-visits td{font-size:14px!important}
 #historyScreen .history-best-row strong{font-size:18px}
+/* v115: clearer Atkinson Hyperlegible numerals in history only; retain each existing weight */
+#historyScreen .history-player-count,
+#historyScreen .history-record-stats-row strong,
+#historyScreen .history-avg-value,
+#historyScreen .history-detail td,
+#historyScreen .history-best-row strong{font-family:"Atkinson Hyperlegible",Arial,sans-serif}
 
 .toast{background:#2d4a3d;border-radius:10px;padding:10px;text-align:center;margin:8px 0;font-size:13px}
 .leg-win-popup{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:9999;min-width:180px;max-width:min(80vw,300px);padding:22px 28px;border:1px solid #557064;border-radius:15px;background:rgba(32,51,68,.97);box-shadow:0 12px 38px rgba(0,0,0,.55);text-align:center;opacity:0;pointer-events:none;transition:opacity .3s ease,transform .3s ease}.leg-win-popup.show{opacity:1;transform:translate(-50%,-50%) scale(1)}.leg-win-popup.fade{opacity:0;transform:translate(-50%,-50%) scale(.98)}.leg-win-popup-name{font-size:22px;font-weight:900;line-height:1.2;overflow-wrap:anywhere}.leg-win-popup-darts{font-size:30px;font-weight:900;line-height:1.15;margin-top:8px;font-variant-numeric:tabular-nums}
@@ -646,7 +655,7 @@ body.setup-fixed #setup button,body.setup-fixed #setup input{touch-action:manipu
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
-const APP_VERSION=114;
+const APP_VERSION=115;
 const $=id=>document.getElementById(id);
 let cfg={legs:3,start:501,out:'double'};
 let S=null, entry='', undoState=null, undoStack=[], redoStack=[], holdTimer=null, holdFired=false;
