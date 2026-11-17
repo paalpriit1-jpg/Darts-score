@@ -98,13 +98,13 @@ input,select{width:100%;background:#142330;color:var(--white);border:1px solid v
 #historyScreen .history-detail td{font-size:16px}
 #historyScreen .history-leg-visits td{font-size:14px!important}
 #historyScreen .history-best-row strong{font-size:18px}
-/* v115: clearer Atkinson Hyperlegible numerals in history only; retain each existing weight */
+/* v117: use Arial in history numbers so zero is displayed without a center stroke; retain existing weights */
 #historyScreen .history-player-count,
 #historyScreen .history-record-stats-row strong,
 #historyScreen .history-avg-value,
 #historyScreen .history-detail td,
-#historyScreen .history-best-row strong{font-family:"Atkinson Hyperlegible",Arial,sans-serif}
-/* v116: use an unslashed zero in history numerals only */
+#historyScreen .history-best-row strong{font-family:Arial,sans-serif}
+/* v117: standard zero glyph in history numerals */
 #historyScreen .history-player-count,
 #historyScreen .history-record-stats-row strong,
 #historyScreen .history-avg-value,
@@ -662,7 +662,7 @@ body.setup-fixed #setup button,body.setup-fixed #setup input{touch-action:manipu
 </div>
 <script>
 document.body.classList.toggle('phone-fit',/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||window.matchMedia('(max-width: 700px)').matches);
-const APP_VERSION=116;
+const APP_VERSION=117;
 const $=id=>document.getElementById(id);
 let cfg={legs:3,start:501,out:'double'};
 let S=null, entry='', undoState=null, undoStack=[], redoStack=[], holdTimer=null, holdFired=false;
